@@ -1,10 +1,16 @@
+import { auth } from "@/lib/auth";
 import { getAllProducts } from "@/lib/products";
+import { getWishlistProductIds } from "@/lib/wishlist";
 import ProductCard from "@/components/storefront/ProductCard";
 
 export const metadata = { title: "All products" };
 
 export default async function ProductsPage() {
-  const products = await getAllProducts();
+  const session = await auth();
+  const [products, wishlistIds] = await Promise.all([
+    getAllProducts(),
+    getWishlistProductIds(session?.user?.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -17,7 +23,11 @@ export default async function ProductsPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              wishlisted={wishlistIds.has(product.id)}
+            />
           ))}
         </div>
       )}

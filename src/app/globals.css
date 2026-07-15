@@ -33,11 +33,14 @@ body {
   color: var(--foreground);
 }
 
+/* Defined as a utility (not a component class) so `@apply btn` below keeps
+   working on Tailwind v4.3+, which can no longer apply component-layer classes. */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium
+    transition-all duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+}
+
 @layer components {
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium
-      transition-all duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
-  }
   .btn-primary {
     @apply btn text-brand-foreground shadow-sm shadow-black/5 hover:brightness-[1.03];
     background: var(--brand);
@@ -77,5 +80,12 @@ body {
 
   .field-label {
     @apply flex flex-col gap-1.5 text-xs font-medium text-muted;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

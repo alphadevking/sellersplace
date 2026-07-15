@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { getProductBySlug } from "@/lib/products";
+import { getWishlistProductIds } from "@/lib/wishlist";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import AddToCartButton from "@/components/storefront/AddToCartButton";
+import WishlistButton from "@/components/storefront/WishlistButton";
 
 export default async function ProductDetailPage({
   params,
@@ -12,6 +15,9 @@ export default async function ProductDetailPage({
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product || !product.isActive) notFound();
+
+  const session = await auth();
+  const wishlistIds = await getWishlistProductIds(session?.user?.id);
 
   const image = product.images?.[0];
 
@@ -47,7 +53,18 @@ export default async function ProductDetailPage({
         </p>
       )}
 
-      {product.stock > 0 && <AddToCartButton productId={product.id} />}
+      <div className="flex items-stretch gap-2">
+        {product.stock > 0 && (
+          <div className="flex-1">
+            <AddToCartButton productId={product.id} />
+          </div>
+        )}
+        <WishlistButton
+          productId={product.id}
+          initialWishlisted={wishlistIds.has(product.id)}
+          variant="detail"
+        />
+      </div>
     </div>
   );
 }

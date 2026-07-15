@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 import "dotenv/config";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -62,7 +63,23 @@ async function main() {
     });
   }
 
+  // Dev admin for /admin — set SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD in .env
+  // to override, and change the password before any real deployment.
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@sellersplace.app";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "changeme123";
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { role: "ADMIN" },
+    create: {
+      email: adminEmail,
+      name: "Store Admin",
+      role: "ADMIN",
+      passwordHash: await bcrypt.hash(adminPassword, 10),
+    },
+  });
+
   console.log(`Seeded ${categories.length} categories and ${products.length} products.`);
+  console.log(`Admin user: ${adminEmail} (password: ${adminPassword})`);
 }
 
 main()

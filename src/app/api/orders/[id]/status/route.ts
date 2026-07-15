@@ -1,43 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { sendOrderStatusPush } from "@/lib/push";
+import { OrderStatus } from "@prisma/client";
+import { getAdminSession } from "@/lib/admin";
+import { updateOrderStatus } from "@/lib/orders";
 
-const STATUS_MESSAGES: Record<string, string> = {
-  CONFIRMED: "Your order has been confirmed.",
-  PROCESSING: "Your order is being prepared.",
-  SHIPPED: "Your order is on its way!",
-  DELIVERED: "Your order has been delivered. Enjoy!",
-  CANCELLED: "Your order has been cancelled.",
-};
-
-// TODO: wrap this route with admin-only auth middleware before going to production.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const { status, note } = await req.json();
 
-  if (!status) {
-    return NextResponse.json({ error: "Missing status" }, { status: 400 });
+  if (!status || !Object.values(OrderStatus).includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const order = await prisma.order.update({
-    where: { id },
-    data: {
-      status,
-      statusHistory: { create: { status, note } },
-    },
-  });
-
-  const message = STATUS_MESSAGES[status];
-  if (message) {
-    await sendOrderStatusPush(order.userId, {
-      title: `Order ${order.orderNumber}`,
-      body: message,
-      url: `/orders/${order.id}`,
-    });
-  }
-
+  const order = await updateOrderStatus(id, status, note);
   return NextResponse.json({ order });
 }

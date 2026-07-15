@@ -32,6 +32,12 @@ export default async function AccountPage() {
         <span className="text-sm text-muted">{session.user.email}</span>
       </div>
 
+      {(session.user.role === "ADMIN" || session.user.role === "STAFF") && (
+        <Link href="/admin" className="btn-outline">
+          Open admin dashboard
+        </Link>
+      )}
+
       <div>
         <h2 className="mb-3 text-sm font-semibold">Order history</h2>
         {orders.length === 0 ? (
