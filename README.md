@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SellerSpace
 
-## Getting Started
+A customizable, installable e-commerce PWA — one storefront + admin dashboard codebase,
+re-skinned per client via `src/config/store.ts` and env vars. Doubles as a normal website
+and an installable app (Android via "Add to Home Screen" / Chrome install prompt, iOS via
+Safari "Add to Home Screen").
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router, Turbopack, TypeScript)
+- **Tailwind CSS v4**
+- **Prisma** + PostgreSQL
+- **Paystack** for payments
+- **web-push** for order-status push notifications
+- Native `app/manifest.ts` + hand-written `public/sw.js` for PWA installability (no `next-pwa`
+  dependency, to avoid Turbopack compatibility issues)
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env   # then fill in real values
+npx prisma generate
+npx prisma migrate dev --name init
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **Note:** `npx prisma generate` needs to reach `binaries.prisma.sh` to download query engine
+> binaries. If you're working in a network-restricted sandbox, run this step in your Codespace,
+> local machine, or CI instead — it's a one-time step per environment.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Generating VAPID keys for push notifications
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx web-push generate-vapid-keys
+```
 
-## Learn More
+Put the output in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`.
 
-To learn more about Next.js, take a look at the following resources:
+## Re-skinning for a new client
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Edit `src/config/store.ts` (or just the env vars it reads) — store name, brand color, currency.
+2. Swap `public/icons/*` with the client's logo assets (192px, 512px, and a 512px maskable icon).
+3. Update `.env` with the client's own `DATABASE_URL` and Paystack keys.
+4. Deploy.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project structure
 
-## Deploy on Vercel
+```
+src/app/(storefront)/   # customer-facing routes: home, categories, product, cart, checkout, orders
+src/app/admin/          # admin dashboard: products, orders, customers, dashboard
+src/app/api/            # checkout, Paystack webhook, order status updates, push subscribe
+src/lib/                # prisma client, paystack helpers, push helpers, currency formatting
+src/config/store.ts     # branding/config — the main file to edit per client
+prisma/schema.prisma    # Product, Category, Order, OrderItem, OrderStatusEvent, User, etc.
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Status / what's built so far
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [x] Project scaffold, Tailwind theming driven by CSS variables (brand color configurable)
+- [x] Prisma schema: users, addresses, categories, products, orders (with status history), wishlist, push subscriptions
+- [x] Storefront home page, bottom nav, header/search shell
+- [x] Paystack checkout initialization + webhook handler (signature-verified)
+- [x] Push notification sending on payment confirmation and order status changes
+- [x] PWA manifest + service worker (offline shell caching + push handling)
+- [ ] Admin dashboard UI (routes scaffolded, not yet built)
+- [ ] Customer auth (login/signup)
+- [ ] Product detail, cart, checkout UI (currently placeholder data on the home page)
+- [ ] Order tracking timeline UI
+- [ ] Seed script for local dev data
+
+## Auth note
+
+Order status routes are currently unauthenticated — there's a `TODO` in
+`src/app/api/orders/[id]/status/route.ts` marking where admin-only auth middleware needs to be
+added before production use.
