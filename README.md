@@ -106,10 +106,12 @@ prisma.config.ts        # Prisma 7 CLI config (connection URL, migrations path)
 - [x] Push notification sending on payment confirmation and order status changes
 - [x] PWA manifest + service worker (offline shell caching + push handling)
 - [x] Prisma 7 migration (adapter-pg, prisma.config.ts, serverExternalPackages)
-- [x] Seed script (`pnpm dlx prisma db seed`) for local dev data
-- [ ] Admin dashboard UI (routes scaffolded, not yet built)
+- [x] Seed script (`pnpm dlx prisma db seed`) for local dev data — includes a dev admin user
+- [x] Admin dashboard: stats, orders (list/detail/status updates with customer push), products
+      (create/edit/publish toggle), customers — role-guarded (ADMIN/STAFF)
+- [x] Wishlist: heart button on product cards + detail page (Etsy-style), `/wishlist` page,
+      synced per-account
 - [ ] Google sign-in (structured so it can slot in later — see note in `src/lib/auth.ts`)
-- [ ] Wishlist page (nav link exists, page not yet built)
 
 ## Auth notes
 
@@ -120,5 +122,8 @@ prisma.config.ts        # Prisma 7 CLI config (connection URL, migrations path)
   a `User` row by email with `isGuest: true` and no password. Signing up later with that same email
   "claims" the guest account (attaches the password, flips `isGuest` to false) rather than creating
   a duplicate — past orders stay attached.
-- `src/app/api/orders/[id]/status/route.ts` (the admin order-status endpoint) is still
-  unauthenticated — needs admin-only auth guarding before production use.
+- Sessions now carry the user's `role`; `/admin` (and the order-status API route) are guarded
+  to `ADMIN`/`STAFF` via `src/lib/admin.ts`.
+- The seed script creates a dev admin (`admin@sellersplace.app` / `changeme123`, overridable
+  with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`) — change this before any real deployment.
+  You can also promote any user by setting `role = 'ADMIN'` on their row.

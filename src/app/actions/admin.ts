@@ -1,0 +1,116 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { OrderStatus, Prisma } from "@prisma/client";
+import { requireAdmin } from "@/lib/admin";
+import { prisma } from "@/lib/prisma";
+import { updateOrderStatus } from "@/lib/orders";
+
+export async function setOrderStatus(formData: FormData) {
+  await requireAdmin();
+
+  const orderId = formData.get("orderId") as string;
+  const status = formData.get("status") as string;
+  const note = (formData.get("note") as string)?.trim();
+
+  if (!orderId || !Object.values(OrderStatus).includes(status as OrderStatus)) {
+    throw new Error("Invalid order status update");
+  }
+
+  await updateOrderStatus(orderId, status as OrderStatus, note || undefined);
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function productDataFromForm(formData: FormData) {
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) throw new Error("Product name is required");
+
+  const price = Number(formData.get("price"));
+  if (!Number.isFinite(price) || price < 0) throw new Error("Invalid price");
+
+  const compareAtRaw = (formData.get("compareAtPrice") as string)?.trim();
+  const compareAtPrice = compareAtRaw ? Number(compareAtRaw) : null;
+  if (compareAtPrice !== null && (!Number.isFinite(compareAtPrice) || compareAtPrice < 0)) {
+    throw new Error("Invalid compare-at price");
+  }
+
+  const images = ((formData.get("images") as string) || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return {
+    name,
+    description: (formData.get("description") as string)?.trim() || null,
+    price: new Prisma.Decimal(price),
+    compareAtPrice: compareAtPrice === null ? null : new Prisma.Decimal(compareAtPrice),
+    stock: Math.max(0, Math.trunc(Number(formData.get("stock")) || 0)),
+    sku: (formData.get("sku") as string)?.trim() || null,
+    categoryId: (formData.get("categoryId") as string) || null,
+    isActive: formData.get("isActive") === "on",
+    images,
+  };
+}
+
+export async function createProduct(formData: FormData) {
+  await requireAdmin();
+
+  const data = productDataFromForm(formData);
+
+  // Auto-slug from the name; suffix if taken so create never fails on a duplicate.
+  const base = slugify(data.name) || "product";
+  let slug = base;
+  for (let n = 2; await prisma.product.findUnique({ where: { slug } }); n++) {
+    slug = `${base}-${n}`;
+  }
+
+  await prisma.product.create({ data: { ...data, slug } });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/");
+  redirect("/admin/products");
+}
+
+export async function updateProduct(formData: FormData) {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  if (!id) throw new Error("Missing product id");
+
+  const data = productDataFromForm(formData);
+  const product = await prisma.product.update({ where: { id }, data });
+
+  revalidatePath("/admin/products");
+  revalidatePath(`/admin/products/${id}`);
+  revalidatePath("/");
+  revalidatePath(`/products/${product.slug}`);
+  redirect("/admin/products");
+}
+
+export async function toggleProductActive(formData: FormData) {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  if (!id) throw new Error("Missing product id");
+
+  const product = await prisma.product.findUniqueOrThrow({ where: { id } });
+  await prisma.product.update({
+    where: { id },
+    data: { isActive: !product.isActive },
+  });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/");
+}

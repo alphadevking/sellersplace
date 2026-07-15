@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { storeConfig } from "@/config/store";
+import { auth } from "@/lib/auth";
 import { getAllCategories, getAllProducts } from "@/lib/products";
+import { getWishlistProductIds } from "@/lib/wishlist";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import ProductCard from "@/components/storefront/ProductCard";
 import TrustBar from "@/components/storefront/TrustBar";
 
 export default async function HomePage() {
-  const [categories, products] = await Promise.all([
+  const session = await auth();
+  const [categories, products, wishlistIds] = await Promise.all([
     getAllCategories(),
     getAllProducts(),
+    getWishlistProductIds(session?.user?.id),
   ]);
 
   return (
@@ -90,7 +94,11 @@ export default async function HomePage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                wishlisted={wishlistIds.has(product.id)}
+              />
             ))}
           </div>
         )}

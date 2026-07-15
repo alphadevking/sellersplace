@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 // Using JWT sessions with a Credentials-only provider for now — no database
@@ -8,6 +9,9 @@ import { prisma } from "@/lib/prisma";
 // added later, swap in @auth/prisma-adapter + the Account/Session tables it
 // requires, and this config only needs a new provider added to the array.
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // Self-hosted deployments (not Vercel) must opt in to trusting the Host
+  // header, otherwise production sign-in fails with UntrustedHost.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -33,17 +37,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
+          role: user.role,
         };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) session.user.id = token.id as string;
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+      }
       return session;
     },
   },

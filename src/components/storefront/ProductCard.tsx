@@ -1,16 +1,25 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
+import WishlistButton from "@/components/storefront/WishlistButton";
 
 export type ProductCardData = {
+  id: string;
   slug: string;
   name: string;
-  price: number | string;
+  // Prisma returns Decimal for price; anything Number() can coerce works here.
+  price: number | string | { toString(): string };
   images: string[];
   category?: { slug: string } | null;
 };
 
-export default function ProductCard({ product }: { product: ProductCardData }) {
+export default function ProductCard({
+  product,
+  wishlisted,
+}: {
+  product: ProductCardData;
+  wishlisted?: boolean;
+}) {
   const image = product.images?.[0];
 
   return (
@@ -18,7 +27,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
       href={`/products/${product.slug}`}
       className="card-surface group flex flex-col gap-1 p-3 transition-transform hover:-translate-y-0.5"
     >
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-background text-3xl">
+      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-background text-3xl">
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -29,6 +38,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         ) : (
           emojiForCategorySlug(product.category?.slug)
         )}
+        <WishlistButton productId={product.id} initialWishlisted={wishlisted ?? false} />
       </div>
       <span className="mt-1 text-sm">{product.name}</span>
       <span className="text-sm font-semibold" style={{ color: "var(--brand)" }}>

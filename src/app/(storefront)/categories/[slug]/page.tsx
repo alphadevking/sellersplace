@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getProductsByCategorySlug } from "@/lib/products";
+import { getWishlistProductIds } from "@/lib/wishlist";
 import ProductCard from "@/components/storefront/ProductCard";
 
 export default async function CategoryPage({
@@ -13,7 +15,11 @@ export default async function CategoryPage({
   const category = await prisma.category.findUnique({ where: { slug } });
   if (!category) notFound();
 
-  const products = await getProductsByCategorySlug(slug);
+  const session = await auth();
+  const [products, wishlistIds] = await Promise.all([
+    getProductsByCategorySlug(slug),
+    getWishlistProductIds(session?.user?.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -28,6 +34,7 @@ export default async function CategoryPage({
             <ProductCard
               key={product.id}
               product={{ ...product, category }}
+              wishlisted={wishlistIds.has(product.id)}
             />
           ))}
         </div>
