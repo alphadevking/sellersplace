@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { getAllCategories } from "@/lib/products";
+import { emojiForCategorySlug } from "@/lib/category-icons";
+
+export const metadata = { title: "Categories" };
+
+export default async function CategoriesPage() {
+  const categories = await getAllCategories();
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="text-lg font-semibold">Categories</h1>
+      {categories.length === 0 ? (
+        <p className="rounded-xl bg-surface p-4 text-sm text-muted">
+          No categories yet. Seed sample data with <code>pnpm dlx prisma db seed</code>.
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {categories.map((cat) => (
+            <Link
+              key={cat.slug}
+              href={`/categories/${cat.slug}`}
+              className="flex flex-col items-center gap-2 rounded-xl bg-surface p-5 text-center"
+            >
+              <span className="text-3xl">{emojiForCategorySlug(cat.slug)}</span>
+              <span className="text-sm">{cat.name}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

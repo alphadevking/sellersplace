@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Grid2x2, Heart, ShoppingCart, User } from "lucide-react";
+import CartBadge from "@/components/storefront/CartBadge";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
@@ -27,10 +28,13 @@ export default function BottomNav() {
               className="flex flex-1 flex-col items-center gap-1 rounded-lg py-1 text-xs"
               aria-current={active ? "page" : undefined}
             >
-              <Icon
-                className="h-5 w-5"
-                style={{ color: active ? "var(--brand)" : "var(--muted)" }}
-              />
+              <span className="relative">
+                <Icon
+                  className="h-5 w-5"
+                  style={{ color: active ? "var(--brand)" : "var(--muted)" }}
+                />
+                {href === "/cart" && <CartBadge />}
+              </span>
               <span style={{ color: active ? "var(--brand)" : "var(--muted)" }}>
                 {label}
               </span>

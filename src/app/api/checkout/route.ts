@@ -5,17 +5,25 @@ import { storeConfig } from "@/config/store";
 
 type CheckoutItem = { productId: string; quantity: number };
 
+type ShippingAddress = {
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, addressId, items, email } = body as {
-      userId: string;
-      addressId: string;
-      items: CheckoutItem[];
+    const { email, items, shippingAddress } = body as {
       email: string;
+      items: CheckoutItem[];
+      shippingAddress: ShippingAddress;
     };
 
-    if (!userId || !items?.length || !email) {
+    if (!email || !items?.length || !shippingAddress) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -23,9 +31,49 @@ export async function POST(req: NextRequest) {
       where: { id: { in: items.map((i) => i.productId) } },
     });
 
-    const subtotal = items.reduce((sum: number, item) => {
-      const product = products.find((p: (typeof products)[number]) => p.id === item.productId);
-      if (!product) throw new Error(`Product ${item.productId} not found`);
+    if (products.length !== items.length) {
+      return NextResponse.json({ error: "One or more products not found" }, { status: 400 });
+    }
+
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId)!;
+      if (product.stock < item.quantity) {
+        return NextResponse.json(
+          { error: `${product.name} only has ${product.stock} in stock` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Guest checkout: find or create a user by email. No password is set —
+    // this account can be "claimed" later once real auth/signup exists.
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { name: shippingAddress.fullName, phone: shippingAddress.phone },
+      create: {
+        email,
+        name: shippingAddress.fullName,
+        phone: shippingAddress.phone,
+        isGuest: true,
+      },
+    });
+
+    const address = await prisma.address.create({
+      data: {
+        userId: user.id,
+        fullName: shippingAddress.fullName,
+        phone: shippingAddress.phone,
+        line1: shippingAddress.line1,
+        line2: shippingAddress.line2,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+      },
+    });
+
+    const subtotal = items.reduce((sum, item) => {
+      const product = products.find(
+        (p: (typeof products)[number]) => p.id === item.productId
+      )!;
       return sum + Number(product.price) * item.quantity;
     }, 0);
 
@@ -36,8 +84,8 @@ export async function POST(req: NextRequest) {
     const order = await prisma.order.create({
       data: {
         orderNumber,
-        userId,
-        addressId,
+        userId: user.id,
+        addressId: address.id,
         subtotal,
         deliveryFee,
         total,

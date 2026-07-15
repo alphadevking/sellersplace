@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { storeConfig } from "@/config/store";
-import { placeholderCategories, placeholderProducts } from "@/lib/placeholder-data";
-import { formatCurrency } from "@/lib/currency";
+import { getAllCategories, getAllProducts } from "@/lib/products";
+import { emojiForCategorySlug } from "@/lib/category-icons";
+import ProductCard from "@/components/storefront/ProductCard";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [categories, products] = await Promise.all([
+    getAllCategories(),
+    getAllProducts(),
+  ]);
+
   return (
     <div className="flex flex-col gap-6">
       <section
@@ -32,18 +38,24 @@ export default function HomePage() {
             View all
           </Link>
         </div>
-        <div className="grid grid-cols-4 gap-3">
-          {placeholderCategories.map((cat) => (
-            <Link
-              key={cat.slug}
-              href={`/categories/${cat.slug}`}
-              className="flex flex-col items-center gap-1.5 rounded-xl bg-surface p-3 text-center"
-            >
-              <span className="text-2xl">{cat.emoji}</span>
-              <span className="text-xs">{cat.name}</span>
-            </Link>
-          ))}
-        </div>
+        {categories.length === 0 ? (
+          <p className="rounded-xl bg-surface p-4 text-sm text-muted">
+            No categories yet — run <code>pnpm dlx prisma db seed</code> to add sample data.
+          </p>
+        ) : (
+          <div className="grid grid-cols-4 gap-3">
+            {categories.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/categories/${cat.slug}`}
+                className="flex flex-col items-center gap-1.5 rounded-xl bg-surface p-3 text-center"
+              >
+                <span className="text-2xl">{emojiForCategorySlug(cat.slug)}</span>
+                <span className="text-xs">{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       <section>
@@ -53,23 +65,18 @@ export default function HomePage() {
             View all
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {placeholderProducts.map((product) => (
-            <Link
-              key={product.id}
-              href={`/products/${product.slug}`}
-              className="flex flex-col gap-1 rounded-xl bg-surface p-3"
-            >
-              <div className="flex aspect-square items-center justify-center rounded-lg bg-background text-3xl">
-                {product.imageEmoji}
-              </div>
-              <span className="mt-1 text-sm">{product.name}</span>
-              <span className="text-sm font-semibold" style={{ color: "var(--brand)" }}>
-                {formatCurrency(product.price)}
-              </span>
-            </Link>
-          ))}
-        </div>
+        {products.length === 0 ? (
+          <p className="rounded-xl bg-surface p-4 text-sm text-muted">
+            No products yet — run <code>pnpm dlx prisma db seed</code> to add sample data,
+            or add products from the admin dashboard once it&apos;s built.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
