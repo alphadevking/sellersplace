@@ -6,8 +6,8 @@
  * without touching app logic.
  */
 export const storeConfig = {
-  name: process.env.NEXT_PUBLIC_STORE_NAME || "SellerSpace",
-  shortName: process.env.NEXT_PUBLIC_STORE_NAME?.slice(0, 12) || "SellerSpace",
+  name: process.env.NEXT_PUBLIC_STORE_NAME || "SellersPlace",
+  shortName: process.env.NEXT_PUBLIC_STORE_NAME?.slice(0, 12) || "SellersPlace",
   description: "Shop the latest products, delivered to your door.",
   primaryColor: process.env.NEXT_PUBLIC_STORE_PRIMARY_COLOR || "#DC2626",
   backgroundColor: "#FFFFFF",

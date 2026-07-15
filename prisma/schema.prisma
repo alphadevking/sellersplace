@@ -1,5 +1,6 @@
-// SellerSpace Prisma Schema
-// Run `npx prisma generate` and `npx prisma migrate dev` after setting DATABASE_URL
+// SellersPlace Prisma Schema
+// Connection URL lives in prisma.config.ts (Prisma 7+), not here.
+// Run `pnpm dlx prisma generate` and `pnpm dlx prisma migrate dev` after setting DATABASE_URL in .env
 
 generator client {
   provider = "prisma-client-js"
@@ -7,7 +8,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
