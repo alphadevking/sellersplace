@@ -19,7 +19,7 @@ export default async function CategoryPage({
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold">{category.name}</h1>
       {products.length === 0 ? (
-        <p className="rounded-xl bg-surface p-4 text-sm text-muted">
+        <p className="card-surface p-4 text-sm text-muted">
           No products in this category yet.
         </p>
       ) : (

@@ -11,7 +11,7 @@ export default async function CategoriesPage() {
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold">Categories</h1>
       {categories.length === 0 ? (
-        <p className="rounded-xl bg-surface p-4 text-sm text-muted">
+        <p className="card-surface p-4 text-sm text-muted">
           No categories yet. Seed sample data with <code>pnpm dlx prisma db seed</code>.
         </p>
       ) : (
@@ -20,7 +20,7 @@ export default async function CategoriesPage() {
             <Link
               key={cat.slug}
               href={`/categories/${cat.slug}`}
-              className="flex flex-col items-center gap-2 rounded-xl bg-surface p-5 text-center"
+              className="flex flex-col items-center gap-2 card-surface p-5 text-center transition-transform hover:-translate-y-0.5 active:scale-95"
             >
               <span className="text-3xl">{emojiForCategorySlug(cat.slug)}</span>
               <span className="text-sm">{cat.name}</span>

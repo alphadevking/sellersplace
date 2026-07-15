@@ -98,18 +98,27 @@ prisma.config.ts        # Prisma 7 CLI config (connection URL, migrations path)
 
 - [x] Project scaffold, Tailwind theming driven by CSS variables (brand color configurable)
 - [x] Prisma schema: users, addresses, categories, products, orders (with status history), wishlist, push subscriptions
-- [x] Storefront home page, bottom nav, header/search shell
+- [x] Storefront: home, categories, product listing/detail — all wired to Prisma (no more placeholder data)
+- [x] Cart (localStorage-backed) and guest/logged-in checkout, both hitting the Paystack API
+- [x] Customer auth (Auth.js v5, email + password) — signup, login, session-aware header, account page with order history
+- [x] Order tracking timeline UI at `/orders/[id]`
 - [x] Paystack checkout initialization + webhook handler (signature-verified)
 - [x] Push notification sending on payment confirmation and order status changes
 - [x] PWA manifest + service worker (offline shell caching + push handling)
 - [x] Prisma 7 migration (adapter-pg, prisma.config.ts, serverExternalPackages)
+- [x] Seed script (`pnpm dlx prisma db seed`) for local dev data
 - [ ] Admin dashboard UI (routes scaffolded, not yet built)
-- [ ] Customer auth (login/signup)
-- [ ] Product detail, cart, checkout UI (currently placeholder data on the home page)
-- [ ] Order tracking timeline UI
-- [ ] Seed script for local dev data
+- [ ] Google sign-in (structured so it can slot in later — see note in `src/lib/auth.ts`)
+- [ ] Wishlist page (nav link exists, page not yet built)
 
-## Known TODOs
+## Auth notes
 
-- `src/app/api/orders/[id]/status/route.ts` is currently unauthenticated — admin-only auth
-  middleware needs to be added before production use.
+- Using Auth.js v5 with a Credentials provider only (no OAuth yet), JWT sessions — no database
+  adapter/extra tables needed for this. `src/lib/auth.ts` has a comment on what changes when
+  Google sign-in gets added later.
+- Guest checkout still works for anyone who doesn't want to create an account: it finds-or-creates
+  a `User` row by email with `isGuest: true` and no password. Signing up later with that same email
+  "claims" the guest account (attaches the password, flips `isGuest` to false) rather than creating
+  a duplicate — past orders stay attached.
+- `src/app/api/orders/[id]/status/route.ts` (the admin order-status endpoint) is still
+  unauthenticated — needs admin-only auth guarding before production use.

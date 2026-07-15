@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { initializePaystackTransaction } from "@/lib/paystack";
 import { storeConfig } from "@/config/store";
 
@@ -45,18 +46,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Guest checkout: find or create a user by email. No password is set —
-    // this account can be "claimed" later once real auth/signup exists.
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: { name: shippingAddress.fullName, phone: shippingAddress.phone },
-      create: {
-        email,
-        name: shippingAddress.fullName,
-        phone: shippingAddress.phone,
-        isGuest: true,
-      },
-    });
+    // Logged-in customers use their real account; anyone else gets a guest
+    // account found-or-created by email (which can later be "claimed" via signup).
+    const session = await auth();
+    const user = session?.user
+      ? await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } })
+      : await prisma.user.upsert({
+          where: { email },
+          update: { name: shippingAddress.fullName, phone: shippingAddress.phone },
+          create: {
+            email,
+            name: shippingAddress.fullName,
+            phone: shippingAddress.phone,
+            isGuest: true,
+          },
+        });
 
     const address = await prisma.address.create({
       data: {

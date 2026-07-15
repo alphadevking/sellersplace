@@ -16,12 +16,16 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="flex flex-col gap-1 rounded-xl bg-surface p-3"
+      className="card-surface group flex flex-col gap-1 p-3 transition-transform hover:-translate-y-0.5"
     >
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-background text-3xl">
+      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-background text-3xl">
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={product.name} className="h-full w-full object-cover" />
+          <img
+            src={image}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          />
         ) : (
           emojiForCategorySlug(product.category?.slug)
         )}

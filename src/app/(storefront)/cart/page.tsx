@@ -45,8 +45,7 @@ export default function CartPage() {
         <p className="text-sm text-muted">Your cart is empty.</p>
         <Link
           href="/products"
-          className="rounded-lg px-4 py-2 text-sm font-medium text-brand-foreground"
-          style={{ background: "var(--brand)" }}
+          className="btn-primary"
         >
           Browse products
         </Link>
@@ -71,7 +70,7 @@ export default function CartPage() {
           if (!product) return null;
 
           return (
-            <div key={line.productId} className="flex gap-3 rounded-xl bg-surface p-3">
+            <div key={line.productId} className="card-surface flex gap-3 p-3">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-2xl">
                 {product.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -106,6 +105,7 @@ export default function CartPage() {
                     <button
                       onClick={() => setQuantity(product.id, line.quantity - 1)}
                       aria-label="Decrease quantity"
+                      className="rounded p-0.5 hover:bg-surface"
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </button>
@@ -114,6 +114,7 @@ export default function CartPage() {
                       onClick={() => setQuantity(product.id, line.quantity + 1)}
                       aria-label="Increase quantity"
                       disabled={line.quantity >= product.stock}
+                      className="rounded p-0.5 hover:bg-surface disabled:opacity-40"
                     >
                       <Plus className="h-3.5 w-3.5" />
                     </button>
@@ -125,7 +126,7 @@ export default function CartPage() {
         })}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl bg-surface p-4 text-sm">
+      <div className="card-surface flex flex-col gap-2 p-4 text-sm">
         <div className="flex justify-between text-muted">
           <span>Subtotal</span>
           <span>{formatCurrency(subtotal)}</span>
@@ -134,7 +135,7 @@ export default function CartPage() {
           <span>Delivery fee</span>
           <span>{formatCurrency(deliveryFee)}</span>
         </div>
-        <div className="flex justify-between border-t border-black/5 pt-2 font-semibold">
+        <div className="flex justify-between border-t pt-2 font-semibold" style={{ borderColor: "var(--border)" }}>
           <span>Total</span>
           <span>{formatCurrency(total)}</span>
         </div>
@@ -142,8 +143,7 @@ export default function CartPage() {
 
       <Link
         href="/checkout"
-        className="rounded-xl py-3 text-center text-sm font-medium text-brand-foreground"
-        style={{ background: "var(--brand)" }}
+        className="btn-primary justify-center"
       >
         Proceed to checkout
       </Link>
