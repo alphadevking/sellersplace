@@ -5,7 +5,12 @@ import { useCart } from "@/lib/cart-context";
 import { formatCurrency } from "@/lib/currency";
 import { storeConfig } from "@/config/store";
 
-type Product = { id: string; price: string };
+type Product = {
+  id: string;
+  price: string;
+  offeringType?: "PRODUCT" | "SERVICE";
+  variants?: { id: string; price: string | null }[];
+};
 
 export default function CheckoutForm({
   defaultEmail = "",
@@ -29,6 +34,8 @@ export default function CheckoutForm({
     line2: "",
     city: "",
     state: "",
+    serviceDate: "",
+    note: "",
   });
 
   useEffect(() => {
@@ -49,9 +56,21 @@ export default function CheckoutForm({
 
   const subtotal = lines.reduce((sum, line) => {
     const product = products.find((p) => p.id === line.productId);
-    return product ? sum + Number(product.price) * line.quantity : sum;
+    if (!product) return sum;
+    const variant = line.variantId
+      ? product.variants?.find((v) => v.id === line.variantId)
+      : undefined;
+    return sum + Number(variant?.price ?? product.price) * line.quantity;
   }, 0);
-  const total = subtotal + storeConfig.deliveryFeeFlat;
+  // Service-only checkouts skip shipping entirely: no address, no delivery fee.
+  const hasPhysical =
+    products.length === 0 ||
+    lines.some(
+      (line) =>
+        products.find((p) => p.id === line.productId)?.offeringType !== "SERVICE"
+    );
+  const deliveryFee = hasPhysical ? storeConfig.deliveryFeeFlat : 0;
+  const total = subtotal + deliveryFee;
 
   function updateField(field: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -68,15 +87,25 @@ export default function CheckoutForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: form.email,
-          items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
-          shippingAddress: {
-            fullName: form.fullName,
-            phone: form.phone,
-            line1: form.line1,
-            line2: form.line2 || undefined,
-            city: form.city,
-            state: form.state,
-          },
+          fullName: form.fullName,
+          phone: form.phone,
+          items: lines.map((l) => ({
+            productId: l.productId,
+            variantId: l.variantId,
+            quantity: l.quantity,
+          })),
+          shippingAddress: hasPhysical
+            ? {
+                fullName: form.fullName,
+                phone: form.phone,
+                line1: form.line1,
+                line2: form.line2 || undefined,
+                city: form.city,
+                state: form.state,
+              }
+            : undefined,
+          serviceDate: form.serviceDate || undefined,
+          note: form.note.trim() || undefined,
         }),
       });
 
@@ -111,12 +140,36 @@ export default function CheckoutForm({
         )}
         <Field label="Full name" value={form.fullName} onChange={(v) => updateField("fullName", v)} required />
         <Field label="Phone" type="tel" value={form.phone} onChange={(v) => updateField("phone", v)} required />
-        <Field label="Address line 1" value={form.line1} onChange={(v) => updateField("line1", v)} required />
-        <Field label="Address line 2 (optional)" value={form.line2} onChange={(v) => updateField("line2", v)} />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="City" value={form.city} onChange={(v) => updateField("city", v)} required />
-          <Field label="State" value={form.state} onChange={(v) => updateField("state", v)} required />
-        </div>
+        {hasPhysical ? (
+          <>
+            <Field label="Address line 1" value={form.line1} onChange={(v) => updateField("line1", v)} required />
+            <Field label="Address line 2 (optional)" value={form.line2} onChange={(v) => updateField("line2", v)} />
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="City" value={form.city} onChange={(v) => updateField("city", v)} required />
+              <Field label="State" value={form.state} onChange={(v) => updateField("state", v)} required />
+            </div>
+          </>
+        ) : (
+          <>
+            <Field
+              label="Preferred date & time"
+              type="datetime-local"
+              value={form.serviceDate}
+              onChange={(v) => updateField("serviceDate", v)}
+              required
+            />
+            <label className="field-label">
+              Notes for the provider (optional)
+              <textarea
+                rows={3}
+                value={form.note}
+                onChange={(e) => updateField("note", e.target.value)}
+                placeholder="Location, requirements, anything they should know…"
+                className="input-field"
+              />
+            </label>
+          </>
+        )}
       </div>
 
       <div className="card-surface flex flex-col gap-2 p-4 text-sm">
@@ -124,10 +177,12 @@ export default function CheckoutForm({
           <span>Subtotal</span>
           <span>{formatCurrency(subtotal)}</span>
         </div>
-        <div className="flex justify-between text-muted">
-          <span>Delivery fee</span>
-          <span>{formatCurrency(storeConfig.deliveryFeeFlat)}</span>
-        </div>
+        {hasPhysical && (
+          <div className="flex justify-between text-muted">
+            <span>Delivery fee</span>
+            <span>{formatCurrency(deliveryFee)}</span>
+          </div>
+        )}
         <div className="flex justify-between border-t pt-2 font-semibold" style={{ borderColor: "var(--border)" }}>
           <span>Total</span>
           <span>{formatCurrency(total)}</span>

@@ -56,7 +56,12 @@ export default async function AdminOrderDetailPage({
             {order.items.map((item) => (
               <div key={item.id} className="flex items-center justify-between text-sm">
                 <div className="flex flex-col">
-                  <span className="font-medium">{item.product.name}</span>
+                  <span className="font-medium">
+                    {item.product.name}
+                    {item.variantName && (
+                      <span className="font-normal text-muted"> · {item.variantName}</span>
+                    )}
+                  </span>
                   <span className="text-xs text-muted">
                     {item.quantity} × {formatCurrency(Number(item.unitPrice))}
                   </span>
@@ -94,6 +99,24 @@ export default async function AdminOrderDetailPage({
               </span>
             )}
           </section>
+
+          {(order.serviceDate || order.customerNote) && (
+            <section className="card flex flex-col gap-1 p-4 text-sm">
+              <h2 className="mb-1 text-sm font-semibold">Booking details</h2>
+              {order.serviceDate && (
+                <span>
+                  Preferred date:{" "}
+                  {order.serviceDate.toLocaleString("en-NG", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </span>
+              )}
+              {order.customerNote && (
+                <span className="text-muted">{order.customerNote}</span>
+              )}
+            </section>
+          )}
 
           {order.address && (
             <section className="card flex flex-col gap-1 p-4 text-sm">

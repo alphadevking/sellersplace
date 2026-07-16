@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { OrderStatus, Prisma } from "@prisma/client";
+import { OfferingType, OrderStatus, PriceType, Prisma, PurchaseMode } from "@prisma/client";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { updateOrderStatus } from "@/lib/orders";
@@ -51,9 +51,28 @@ function productDataFromForm(formData: FormData) {
     .map((line) => line.trim())
     .filter(Boolean);
 
+  const purchaseModeRaw = (formData.get("purchaseMode") as string) || "PAY_ONLINE";
+  if (!Object.values(PurchaseMode).includes(purchaseModeRaw as PurchaseMode)) {
+    throw new Error("Invalid purchase mode");
+  }
+
+  const offeringTypeRaw = (formData.get("offeringType") as string) || "PRODUCT";
+  if (!Object.values(OfferingType).includes(offeringTypeRaw as OfferingType)) {
+    throw new Error("Invalid offering type");
+  }
+
+  const priceTypeRaw = (formData.get("priceType") as string) || "FIXED";
+  if (!Object.values(PriceType).includes(priceTypeRaw as PriceType)) {
+    throw new Error("Invalid price type");
+  }
+
   return {
     name,
     description: (formData.get("description") as string)?.trim() || null,
+    brand: (formData.get("brand") as string)?.trim() || null,
+    purchaseMode: purchaseModeRaw as PurchaseMode,
+    offeringType: offeringTypeRaw as OfferingType,
+    priceType: priceTypeRaw as PriceType,
     price: new Prisma.Decimal(price),
     compareAtPrice: compareAtPrice === null ? null : new Prisma.Decimal(compareAtPrice),
     stock: Math.max(0, Math.trunc(Number(formData.get("stock")) || 0)),

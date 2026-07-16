@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { initializePaystackTransaction } from "@/lib/paystack";
 import { storeConfig } from "@/config/store";
 
-type CheckoutItem = { productId: string; quantity: number };
+type CheckoutItem = { productId: string; variantId?: string; quantity: number };
 
 type ShippingAddress = {
   fullName: string;
@@ -18,32 +18,84 @@ type ShippingAddress = {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, items, shippingAddress } = body as {
+    const { email, items, shippingAddress, fullName, phone, serviceDate, note } = body as {
       email: string;
       items: CheckoutItem[];
-      shippingAddress: ShippingAddress;
+      shippingAddress?: ShippingAddress;
+      fullName?: string;
+      phone?: string;
+      serviceDate?: string;
+      note?: string;
     };
 
-    if (!email || !items?.length || !shippingAddress) {
+    if (!email || !items?.length) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const products = await prisma.product.findMany({
       where: { id: { in: items.map((i) => i.productId) } },
+      include: { variants: true },
     });
 
-    if (products.length !== items.length) {
-      return NextResponse.json({ error: "One or more products not found" }, { status: 400 });
-    }
+    // Resolve each line to its product (and variant when given), with the
+    // effective unit price and available stock for that exact line.
+    const resolved: {
+      item: CheckoutItem;
+      product: (typeof products)[number];
+      variant: (typeof products)[number]["variants"][number] | null;
+      unitPrice: number;
+    }[] = [];
 
     for (const item of items) {
-      const product = products.find((p) => p.id === item.productId)!;
-      if (product.stock < item.quantity) {
+      const product = products.find((p) => p.id === item.productId);
+      if (!product) {
+        return NextResponse.json({ error: "One or more products not found" }, { status: 400 });
+      }
+      if (product.purchaseMode === "CONTACT_SELLER" || product.priceType === "QUOTE") {
         return NextResponse.json(
-          { error: `${product.name} only has ${product.stock} in stock` },
+          { error: `${product.name} is arranged via direct contact with the seller` },
           { status: 400 }
         );
       }
+      const variant = item.variantId
+        ? product.variants.find((v) => v.id === item.variantId) || null
+        : null;
+      if (item.variantId && !variant) {
+        return NextResponse.json(
+          { error: `Selected option for ${product.name} is no longer available` },
+          { status: 400 }
+        );
+      }
+      // Services aren't stock-limited; only physical products check inventory.
+      if (product.offeringType !== "SERVICE") {
+        const available = variant ? variant.stock : product.stock;
+        if (available < item.quantity) {
+          return NextResponse.json(
+            {
+              error: `${product.name}${variant ? ` (${variant.name})` : ""} only has ${available} in stock`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+      resolved.push({
+        item,
+        product,
+        variant,
+        unitPrice: Number(variant?.price ?? product.price),
+      });
+    }
+
+    // Physical items must ship somewhere; service-only orders don't need an address.
+    const hasPhysical = resolved.some((l) => l.product.offeringType !== "SERVICE");
+    if (hasPhysical && !shippingAddress) {
+      return NextResponse.json({ error: "Shipping address is required" }, { status: 400 });
+    }
+
+    const customerName = shippingAddress?.fullName || fullName;
+    const customerPhone = shippingAddress?.phone || phone;
+    if (!customerName || !customerPhone) {
+      return NextResponse.json({ error: "Name and phone are required" }, { status: 400 });
     }
 
     // Logged-in customers use their real account; anyone else gets a guest
@@ -53,57 +105,59 @@ export async function POST(req: NextRequest) {
       ? await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } })
       : await prisma.user.upsert({
           where: { email },
-          update: { name: shippingAddress.fullName, phone: shippingAddress.phone },
+          update: { name: customerName, phone: customerPhone },
           create: {
             email,
-            name: shippingAddress.fullName,
-            phone: shippingAddress.phone,
+            name: customerName,
+            phone: customerPhone,
             isGuest: true,
           },
         });
 
-    const address = await prisma.address.create({
-      data: {
-        userId: user.id,
-        fullName: shippingAddress.fullName,
-        phone: shippingAddress.phone,
-        line1: shippingAddress.line1,
-        line2: shippingAddress.line2,
-        city: shippingAddress.city,
-        state: shippingAddress.state,
-      },
-    });
+    const address = shippingAddress
+      ? await prisma.address.create({
+          data: {
+            userId: user.id,
+            fullName: shippingAddress.fullName,
+            phone: shippingAddress.phone,
+            line1: shippingAddress.line1,
+            line2: shippingAddress.line2,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+          },
+        })
+      : null;
 
-    const subtotal = items.reduce((sum, item) => {
-      const product = products.find(
-        (p: (typeof products)[number]) => p.id === item.productId
-      )!;
-      return sum + Number(product.price) * item.quantity;
-    }, 0);
+    const subtotal = resolved.reduce(
+      (sum, line) => sum + line.unitPrice * line.item.quantity,
+      0
+    );
 
-    const deliveryFee = storeConfig.deliveryFeeFlat;
+    const deliveryFee = hasPhysical ? storeConfig.deliveryFeeFlat : 0;
     const total = subtotal + deliveryFee;
     const orderNumber = `SS-${Date.now().toString(36).toUpperCase()}`;
+
+    const parsedServiceDate = serviceDate ? new Date(serviceDate) : null;
 
     const order = await prisma.order.create({
       data: {
         orderNumber,
         userId: user.id,
-        addressId: address.id,
+        addressId: address?.id,
+        serviceDate:
+          parsedServiceDate && !isNaN(parsedServiceDate.getTime()) ? parsedServiceDate : null,
+        customerNote: note?.trim() || null,
         subtotal,
         deliveryFee,
         total,
         items: {
-          create: items.map((item) => {
-            const product = products.find(
-              (p: (typeof products)[number]) => p.id === item.productId
-            )!;
-            return {
-              productId: item.productId,
-              quantity: item.quantity,
-              unitPrice: product.price,
-            };
-          }),
+          create: resolved.map(({ item, variant, unitPrice }) => ({
+            productId: item.productId,
+            variantId: variant?.id,
+            variantName: variant?.name,
+            quantity: item.quantity,
+            unitPrice,
+          })),
         },
         statusHistory: { create: { status: "PENDING", note: "Order placed" } },
       },

@@ -6,6 +6,7 @@ export const categoryEmoji: Record<string, string> = {
   electronics: "🎧",
   grocery: "🛒",
   cosmetics: "💄",
+  services: "🛠️",
 };
 
 export function emojiForCategorySlug(slug?: string | null): string {

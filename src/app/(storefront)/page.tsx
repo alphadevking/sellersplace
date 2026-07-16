@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { storeConfig } from "@/config/store";
+import { storeConfig, terms } from "@/config/store";
 import { auth } from "@/lib/auth";
 import { getAllCategories, getAllProducts } from "@/lib/products";
 import { getWishlistProductIds } from "@/lib/wishlist";
@@ -35,7 +35,7 @@ export default async function HomePage() {
             New collection
           </span>
           <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.1] tracking-tight sm:text-4xl lg:max-w-[22ch] lg:text-5xl">
-            Shop the latest at {storeConfig.name}
+            {terms.heroTagline} {storeConfig.name}
           </h1>
           <p className="max-w-[32ch] text-sm text-brand-foreground/80 sm:max-w-[48ch] sm:text-base">
             {storeConfig.description}
@@ -45,7 +45,7 @@ export default async function HomePage() {
             className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-medium transition-transform active:scale-[0.98] sm:px-5 sm:py-3"
             style={{ color: "var(--brand)" }}
           >
-            Shop now <ArrowRight className="h-4 w-4" />
+            {terms.heroCta} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
@@ -90,7 +90,7 @@ export default async function HomePage() {
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Popular products</h2>
+          <h2 className="text-sm font-semibold">{terms.popular}</h2>
           <Link href="/products" className="text-xs text-muted hover:text-foreground">
             View all
           </Link>

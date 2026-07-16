@@ -8,6 +8,13 @@ import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import { storeConfig } from "@/config/store";
 
+type Variant = {
+  id: string;
+  name: string;
+  price: string | null;
+  stock: number;
+};
+
 type Product = {
   id: string;
   name: string;
@@ -15,6 +22,8 @@ type Product = {
   price: string;
   images: string[];
   stock: number;
+  offeringType?: "PRODUCT" | "SERVICE";
+  variants?: Variant[];
 };
 
 export default function CartPage() {
@@ -53,11 +62,24 @@ export default function CartPage() {
     );
   }
 
-  const subtotal = lines.reduce((sum, line) => {
+  const linePrice = (line: { productId: string; variantId?: string }) => {
     const product = products.find((p) => p.id === line.productId);
-    return product ? sum + Number(product.price) * line.quantity : sum;
+    if (!product) return null;
+    const variant = line.variantId
+      ? product.variants?.find((v) => v.id === line.variantId)
+      : undefined;
+    return { product, variant, price: Number(variant?.price ?? product.price) };
+  };
+
+  const subtotal = lines.reduce((sum, line) => {
+    const resolved = linePrice(line);
+    return resolved ? sum + resolved.price * line.quantity : sum;
   }, 0);
-  const deliveryFee = storeConfig.deliveryFeeFlat;
+  // Services aren't shipped — the delivery fee only applies to physical items.
+  const hasPhysical = lines.some(
+    (line) => linePrice(line)?.product.offeringType !== "SERVICE"
+  );
+  const deliveryFee = hasPhysical ? storeConfig.deliveryFeeFlat : 0;
   const total = subtotal + deliveryFee;
 
   return (
@@ -67,11 +89,21 @@ export default function CartPage() {
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-6">
       <div className="flex flex-col gap-3">
         {lines.map((line) => {
-          const product = products.find((p) => p.id === line.productId);
-          if (!product) return null;
+          const resolved = linePrice(line);
+          if (!resolved) return null;
+          const { product, variant, price } = resolved;
+          const maxStock =
+            product.offeringType === "SERVICE"
+              ? Infinity
+              : variant
+                ? variant.stock
+                : product.stock;
 
           return (
-            <div key={line.productId} className="card-surface flex gap-3 p-3">
+            <div
+              key={`${line.productId}:${line.variantId ?? ""}`}
+              className="card-surface flex gap-3 p-3"
+            >
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-2xl">
                 {product.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -87,11 +119,14 @@ export default function CartPage() {
 
               <div className="flex flex-1 flex-col justify-between">
                 <div className="flex items-start justify-between gap-2">
-                  <Link href={`/products/${product.slug}`} className="text-sm font-medium">
-                    {product.name}
-                  </Link>
+                  <div className="flex flex-col">
+                    <Link href={`/products/${product.slug}`} className="text-sm font-medium">
+                      {product.name}
+                    </Link>
+                    {variant && <span className="text-xs text-muted">{variant.name}</span>}
+                  </div>
                   <button
-                    onClick={() => removeItem(product.id)}
+                    onClick={() => removeItem(product.id, line.variantId)}
                     aria-label="Remove item"
                     className="text-muted"
                   >
@@ -100,11 +135,11 @@ export default function CartPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold" style={{ color: "var(--brand)" }}>
-                    {formatCurrency(Number(product.price))}
+                    {formatCurrency(price)}
                   </span>
                   <div className="flex items-center gap-2 rounded-lg bg-background px-2 py-1">
                     <button
-                      onClick={() => setQuantity(product.id, line.quantity - 1)}
+                      onClick={() => setQuantity(product.id, line.quantity - 1, line.variantId)}
                       aria-label="Decrease quantity"
                       className="rounded p-0.5 hover:bg-surface"
                     >
@@ -112,9 +147,9 @@ export default function CartPage() {
                     </button>
                     <span className="w-4 text-center text-sm">{line.quantity}</span>
                     <button
-                      onClick={() => setQuantity(product.id, line.quantity + 1)}
+                      onClick={() => setQuantity(product.id, line.quantity + 1, line.variantId)}
                       aria-label="Increase quantity"
-                      disabled={line.quantity >= product.stock}
+                      disabled={line.quantity >= maxStock}
                       className="rounded p-0.5 hover:bg-surface disabled:opacity-40"
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -133,10 +168,12 @@ export default function CartPage() {
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-muted">
-            <span>Delivery fee</span>
-            <span>{formatCurrency(deliveryFee)}</span>
-          </div>
+          {hasPhysical && (
+            <div className="flex justify-between text-muted">
+              <span>Delivery fee</span>
+              <span>{formatCurrency(deliveryFee)}</span>
+            </div>
+          )}
           <div className="flex justify-between border-t pt-2 font-semibold" style={{ borderColor: "var(--border)" }}>
             <span>Total</span>
             <span>{formatCurrency(total)}</span>

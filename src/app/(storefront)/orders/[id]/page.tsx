@@ -81,7 +81,12 @@ export default async function OrderDetailPage({
         {order.items.map((item) => (
           <div key={item.id} className="card flex items-center justify-between p-4">
             <div className="flex flex-col">
-              <span className="text-sm font-medium">{item.product.name}</span>
+              <span className="text-sm font-medium">
+                {item.product.name}
+                {item.variantName && (
+                  <span className="font-normal text-muted"> · {item.variantName}</span>
+                )}
+              </span>
               <span className="text-xs text-muted">Qty {item.quantity}</span>
             </div>
             <span className="text-sm">{formatCurrency(Number(item.unitPrice) * item.quantity)}</span>
@@ -113,6 +118,22 @@ export default async function OrderDetailPage({
             {order.address.state}
           </span>
           <span className="text-muted">{order.address.phone}</span>
+        </div>
+      )}
+
+      {(order.serviceDate || order.customerNote) && (
+        <div className="card-surface flex flex-col gap-1 p-4 text-sm">
+          <span className="font-medium">Booking details</span>
+          {order.serviceDate && (
+            <span className="text-muted">
+              Preferred date:{" "}
+              {order.serviceDate.toLocaleString("en-NG", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </span>
+          )}
+          {order.customerNote && <span className="text-muted">{order.customerNote}</span>}
         </div>
       )}
     </div>

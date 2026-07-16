@@ -11,6 +11,10 @@ export type ProductCardData = {
   price: number | string | { toString(): string };
   compareAtPrice?: number | string | { toString(): string } | null;
   images: string[];
+  brand?: string | null;
+  purchaseMode?: "PAY_ONLINE" | "CONTACT_SELLER" | "BOTH";
+  offeringType?: "PRODUCT" | "SERVICE";
+  priceType?: "FIXED" | "FROM" | "QUOTE";
   category?: { slug: string } | null;
 };
 
@@ -23,7 +27,9 @@ export default function ProductCard({
 }) {
   const image = product.images?.[0];
   const price = Number(product.price);
-  const compareAt = product.compareAtPrice ? Number(product.compareAtPrice) : null;
+  const quoted = product.priceType === "QUOTE";
+  const compareAt =
+    !quoted && product.compareAtPrice ? Number(product.compareAtPrice) : null;
   const discount =
     compareAt && compareAt > price ? Math.round(((compareAt - price) / compareAt) * 100) : null;
 
@@ -53,10 +59,25 @@ export default function ProductCard({
           </span>
         )}
       </div>
-      <span className="mt-1 text-sm">{product.name}</span>
+      {product.brand && (
+        <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-muted">
+          {product.brand}
+        </span>
+      )}
+      <span className={product.brand ? "text-sm" : "mt-1 text-sm"}>{product.name}</span>
+      {product.purchaseMode === "CONTACT_SELLER" && (
+        <span
+          className="w-fit rounded-full px-2 py-0.5 text-[10px] font-medium"
+          style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+        >
+          Chat to order
+        </span>
+      )}
       <span className="flex items-baseline gap-1.5">
         <span className="text-sm font-semibold" style={{ color: "var(--brand)" }}>
-          {formatCurrency(price)}
+          {quoted
+            ? "Request a quote"
+            : `${product.priceType === "FROM" ? "From " : ""}${formatCurrency(price)}`}
         </span>
         {compareAt && compareAt > price && (
           <span className="text-xs text-muted line-through">{formatCurrency(compareAt)}</span>

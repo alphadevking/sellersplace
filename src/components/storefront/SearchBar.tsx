@@ -6,12 +6,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { Search, Loader2 } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
+import { terms } from "@/config/store";
 
 type SearchResult = {
   id: string;
   slug: string;
   name: string;
   price: string;
+  priceType?: "FIXED" | "FROM" | "QUOTE";
   images: string[];
   category?: { slug: string; name: string } | null;
 };
@@ -28,6 +30,7 @@ export default function SearchBar({ className = "" }: { className?: string }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
+  const [fallback, setFallback] = useState(false);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -58,6 +61,7 @@ export default function SearchBar({ className = "" }: { className?: string }) {
         .then((data) => {
           setResults(data.products || []);
           setTotal(data.total ?? (data.products?.length || 0));
+          setFallback(Boolean(data.fallback));
           setActiveIndex(-1);
           setLoading(false);
         })
@@ -140,12 +144,13 @@ export default function SearchBar({ className = "" }: { className?: string }) {
               if (value.trim().length < MIN_QUERY_LENGTH) {
                 setResults([]);
                 setTotal(0);
+                setFallback(false);
                 setLoading(false);
               }
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
-            placeholder="Search products…"
+            placeholder={terms.searchPlaceholder}
             autoComplete="off"
             role="combobox"
             aria-expanded={showDropdown}
@@ -167,6 +172,14 @@ export default function SearchBar({ className = "" }: { className?: string }) {
             </p>
           ) : (
             <>
+              {fallback && (
+                <p
+                  className="border-b px-3 py-2 text-xs text-muted"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  No matches for “{trimmed}” — popular right now:
+                </p>
+              )}
               <ul id="search-results" className="max-h-80 overflow-y-auto overscroll-contain" role="listbox">
                 {results.map((product, index) => (
                   <li key={product.id} role="option" aria-selected={index === activeIndex}>
@@ -202,7 +215,9 @@ export default function SearchBar({ className = "" }: { className?: string }) {
                         )}
                       </span>
                       <span className="shrink-0 text-sm font-semibold" style={{ color: "var(--brand)" }}>
-                        {formatCurrency(Number(product.price))}
+                        {product.priceType === "QUOTE"
+                          ? "Quote"
+                          : `${product.priceType === "FROM" ? "From " : ""}${formatCurrency(Number(product.price))}`}
                       </span>
                     </Link>
                   </li>
@@ -214,9 +229,11 @@ export default function SearchBar({ className = "" }: { className?: string }) {
                 className="w-full border-t px-3 py-2.5 text-center text-xs font-medium transition-colors hover:bg-surface"
                 style={{ borderColor: "var(--border)", color: "var(--brand)" }}
               >
-                {total > results.length
-                  ? `View all ${total} results`
-                  : `View all results for “${trimmed}”`}
+                {fallback
+                  ? "Browse all products"
+                  : total > results.length
+                    ? `View all ${total} results`
+                    : `View all results for “${trimmed}”`}
               </button>
             </>
           )}

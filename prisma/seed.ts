@@ -1,10 +1,18 @@
-import { PrismaClient } from "@prisma/client";
+import { OfferingType, PriceType, PrismaClient, PurchaseMode } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 import { createDbAdapter } from "../src/lib/db-adapter";
 
 const adapter = createDbAdapter(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
+
+type SeedVariant = {
+  name: string;
+  sku: string;
+  price?: number;
+  stock: number;
+  options?: Record<string, string>;
+};
 
 // Stable Unsplash CDN photos so seeded data looks like a real store.
 const img = (id: string) =>
@@ -16,6 +24,7 @@ async function main() {
     { name: "Electronics", slug: "electronics", imageUrl: img("photo-1498049794561-7780e7231661") },
     { name: "Grocery", slug: "grocery", imageUrl: img("photo-1542838132-92c53300491e") },
     { name: "Cosmetics", slug: "cosmetics", imageUrl: img("photo-1596462502278-27bfdc403348") },
+    { name: "Services", slug: "services", imageUrl: img("photo-1521791136064-7986c2920216") },
   ];
 
   for (const cat of categories) {
@@ -32,38 +41,83 @@ async function main() {
   const electronics = await bySlug("electronics");
   const grocery = await bySlug("grocery");
   const cosmetics = await bySlug("cosmetics");
+  const services = await bySlug("services");
 
-  const products = [
+  const products: Array<{
+    name: string;
+    slug: string;
+    description: string;
+    brand: string;
+    attributes: Record<string, string>;
+    purchaseMode?: PurchaseMode;
+    offeringType?: OfferingType;
+    priceType?: PriceType;
+    price: number;
+    compareAtPrice: number;
+    stock: number;
+    sku: string;
+    images: string[];
+    categoryId: string;
+    variants?: SeedVariant[];
+  }> = [
     // Electronics
     {
       name: "Smart Watch",
       slug: "smart-watch",
       description:
         "Track your fitness, heart rate, sleep, and notifications on your wrist. Water-resistant with a 7-day battery and interchangeable straps.",
+      brand: "Pulse",
+      attributes: {
+        "Display": "1.4\" AMOLED",
+        "Battery life": "7 days",
+        "Water resistance": "5 ATM",
+        "Connectivity": "Bluetooth 5.2",
+      },
       price: 89999,
       compareAtPrice: 109999,
       stock: 25,
       sku: "ELC-SW-001",
       images: [img("photo-1523275335684-37898b6baf30")],
       categoryId: electronics.id,
+      variants: [
+        { name: "Midnight Black", sku: "ELC-SW-001-BLK", stock: 15, options: { color: "Black" } },
+        { name: "Rose Gold", sku: "ELC-SW-001-RG", price: 94999, stock: 10, options: { color: "Rose Gold" } },
+      ],
     },
     {
       name: "Wireless Headphones",
       slug: "wireless-headphones",
       description:
         "Noise-cancelling over-ear headphones with 30hr battery life, plush memory-foam earcups, and crystal-clear call quality.",
+      brand: "AudioMax",
+      attributes: {
+        "Battery life": "30 hours",
+        "Noise cancelling": "Active (ANC)",
+        "Driver": "40mm dynamic",
+        "Weight": "254g",
+      },
       price: 45999,
       compareAtPrice: 59999,
       stock: 40,
       sku: "ELC-WH-002",
       images: [img("photo-1505740420928-5e560c06d30e")],
       categoryId: electronics.id,
+      variants: [
+        { name: "Black", sku: "ELC-WH-002-BLK", stock: 25, options: { color: "Black" } },
+        { name: "Silver", sku: "ELC-WH-002-SLV", stock: 15, options: { color: "Silver" } },
+      ],
     },
     {
       name: "Bluetooth Speaker",
       slug: "bluetooth-speaker",
       description:
         "Portable speaker with deep bass, 12hr playtime, and IPX7 waterproofing — perfect for home or outdoors.",
+      brand: "AudioMax",
+      attributes: {
+        "Playtime": "12 hours",
+        "Waterproofing": "IPX7",
+        "Output": "20W",
+      },
       price: 32500,
       compareAtPrice: 38000,
       stock: 30,
@@ -76,6 +130,12 @@ async function main() {
       slug: "wireless-earbuds",
       description:
         "True wireless earbuds with active noise cancellation, touch controls, and a pocket-sized charging case.",
+      brand: "Pulse",
+      attributes: {
+        "Battery life": "8h + 24h case",
+        "Noise cancelling": "Active (ANC)",
+        "Water resistance": "IPX4",
+      },
       price: 27999,
       compareAtPrice: 34999,
       stock: 55,
@@ -88,7 +148,15 @@ async function main() {
       name: "Leather Handbag",
       slug: "leather-handbag",
       description:
-        "Genuine leather handbag with a hand-stitched finish, magnetic closure, and roomy interior pockets.",
+        "Genuine leather handbag with a hand-stitched finish, magnetic closure, and roomy interior pockets. Made to order — chat with us to personalise yours.",
+      brand: "Adire Atelier",
+      attributes: {
+        "Material": "Full-grain leather",
+        "Finish": "Hand-stitched",
+        "Made in": "Nigeria",
+      },
+      // Bespoke, made-to-order product: buyers discuss details with the seller.
+      purchaseMode: PurchaseMode.CONTACT_SELLER,
       price: 62500,
       compareAtPrice: 75000,
       stock: 15,
@@ -101,30 +169,58 @@ async function main() {
       slug: "classic-sneakers",
       description:
         "Everyday low-top sneakers with cushioned insoles and a durable rubber outsole. Available in unisex sizing.",
+      brand: "Strider",
+      attributes: {
+        "Upper": "Canvas",
+        "Sole": "Vulcanised rubber",
+        "Fit": "Unisex, true to size",
+      },
       price: 38500,
       compareAtPrice: 45000,
       stock: 50,
       sku: "FSH-SN-002",
       images: [img("photo-1542291026-7eec264c27ff")],
       categoryId: fashion.id,
+      variants: [
+        { name: "EU 40", sku: "FSH-SN-002-40", stock: 12, options: { size: "40" } },
+        { name: "EU 42", sku: "FSH-SN-002-42", stock: 20, options: { size: "42" } },
+        { name: "EU 44", sku: "FSH-SN-002-44", stock: 18, options: { size: "44" } },
+        { name: "EU 46", sku: "FSH-SN-002-46", stock: 0, options: { size: "46" } },
+      ],
     },
     {
       name: "Denim Jacket",
       slug: "denim-jacket",
       description:
         "Timeless mid-wash denim jacket with button front, chest pockets, and a relaxed fit that layers over anything.",
+      brand: "Urban Thread",
+      attributes: {
+        "Material": "100% cotton denim",
+        "Wash": "Mid-blue",
+        "Fit": "Relaxed",
+      },
       price: 29999,
       compareAtPrice: 36500,
       stock: 22,
       sku: "FSH-DJ-003",
       images: [img("photo-1576995853123-5a10305d93c0")],
       categoryId: fashion.id,
+      variants: [
+        { name: "M", sku: "FSH-DJ-003-M", stock: 8, options: { size: "M" } },
+        { name: "L", sku: "FSH-DJ-003-L", stock: 9, options: { size: "L" } },
+        { name: "XL", sku: "FSH-DJ-003-XL", stock: 5, options: { size: "XL" } },
+      ],
     },
     {
       name: "Aviator Sunglasses",
       slug: "aviator-sunglasses",
       description:
         "UV400-protected aviator sunglasses with polarized lenses and a lightweight metal frame.",
+      brand: "Solstice",
+      attributes: {
+        "Lens": "Polarized, UV400",
+        "Frame": "Stainless steel",
+      },
       price: 15500,
       compareAtPrice: 19999,
       stock: 60,
@@ -137,7 +233,15 @@ async function main() {
       name: "Premium Coffee Beans 1kg",
       slug: "premium-coffee-beans",
       description:
-        "Single-origin arabica beans, medium roast, freshly packed for a rich and balanced cup every morning.",
+        "Single-origin arabica beans, medium roast, freshly packed for a rich and balanced cup every morning. Bulk orders welcome — chat with us for wholesale pricing.",
+      brand: "Highlands Roastery",
+      attributes: {
+        "Origin": "Single-origin arabica",
+        "Roast": "Medium",
+        "Weight": "1kg",
+      },
+      // Retail buyers pay online; bulk/wholesale buyers negotiate via chat.
+      purchaseMode: PurchaseMode.BOTH,
       price: 8500,
       compareAtPrice: 9999,
       stock: 80,
@@ -150,6 +254,12 @@ async function main() {
       slug: "pure-honey",
       description:
         "Raw, unfiltered honey harvested from local farms. No additives, no preservatives — just pure sweetness.",
+      brand: "Highlands Roastery",
+      attributes: {
+        "Type": "Raw, unfiltered",
+        "Volume": "500ml",
+        "Source": "Local farms",
+      },
       price: 6500,
       compareAtPrice: 7500,
       stock: 45,
@@ -163,6 +273,12 @@ async function main() {
       slug: "matte-lipstick-set",
       description:
         "Long-wear matte lipsticks in four everyday shades. Smudge-proof, hydrating formula that lasts all day.",
+      brand: "Velvetine",
+      attributes: {
+        "Finish": "Matte",
+        "Shades": "4",
+        "Wear": "Up to 12 hours",
+      },
       price: 12999,
       compareAtPrice: 16500,
       stock: 35,
@@ -175,23 +291,92 @@ async function main() {
       slug: "vitamin-c-face-serum",
       description:
         "Brightening serum with 15% vitamin C and hyaluronic acid for glowing, even-toned skin. Suitable for all skin types.",
+      brand: "Velvetine",
+      attributes: {
+        "Active": "15% Vitamin C",
+        "Volume": "30ml",
+        "Skin type": "All",
+      },
       price: 18500,
       compareAtPrice: 22000,
       stock: 28,
       sku: "CSM-FS-002",
       images: [img("photo-1620916566398-39f1143ab7be")],
       categoryId: cosmetics.id,
+      variants: [
+        { name: "30ml", sku: "CSM-FS-002-30", stock: 18, options: { volume: "30ml" } },
+        { name: "50ml", sku: "CSM-FS-002-50", price: 26500, stock: 10, options: { volume: "50ml" } },
+      ],
+    },
+    // Services — the template serves service brands too (bookings & quotes).
+    {
+      name: "Home Deep Cleaning",
+      slug: "home-deep-cleaning",
+      description:
+        "Professional deep cleaning for apartments and houses: kitchens, bathrooms, floors, and windows. Pick a package that matches your home size and book a session online.",
+      brand: "SparklePro",
+      attributes: {
+        "Duration": "3–6 hours",
+        "Team": "2–4 cleaners",
+        "Coverage": "Lagos mainland & island",
+        "Supplies": "Included",
+      },
+      offeringType: OfferingType.SERVICE,
+      priceType: PriceType.FROM,
+      purchaseMode: PurchaseMode.BOTH,
+      price: 25000,
+      compareAtPrice: 30000,
+      stock: 0,
+      sku: "SVC-HC-001",
+      images: [img("photo-1581578731548-c64695cc6952")],
+      categoryId: services.id,
+      variants: [
+        { name: "Studio / 1-bed", sku: "SVC-HC-001-S", price: 25000, stock: 0, options: { size: "Studio/1-bed" } },
+        { name: "2–3 bedroom", sku: "SVC-HC-001-M", price: 40000, stock: 0, options: { size: "2-3 bed" } },
+        { name: "4+ bedroom / duplex", sku: "SVC-HC-001-L", price: 65000, stock: 0, options: { size: "4+ bed" } },
+      ],
+    },
+    {
+      name: "Event Photography",
+      slug: "event-photography",
+      description:
+        "Weddings, birthdays, corporate events — professional coverage with edited photos delivered within 7 days. Every event is different, so chat with us for a tailored quote.",
+      brand: "LensCraft Studios",
+      attributes: {
+        "Delivery": "Edited photos in 7 days",
+        "Coverage": "Half-day or full-day",
+        "Extras": "Drone & same-day previews available",
+      },
+      offeringType: OfferingType.SERVICE,
+      priceType: PriceType.QUOTE,
+      purchaseMode: PurchaseMode.CONTACT_SELLER,
+      price: 150000,
+      compareAtPrice: 0,
+      stock: 0,
+      sku: "SVC-EP-002",
+      images: [img("photo-1492691527719-9d1e07e534b4")],
+      categoryId: services.id,
     },
   ];
 
   for (const product of products) {
-    const { slug, ...data } = product;
-    await prisma.product.upsert({
+    const { slug, variants, ...data } = product;
+    const saved = await prisma.product.upsert({
       where: { slug },
       // Re-seeding refreshes fields on existing rows so nothing is left empty.
       update: data,
       create: { slug, ...data },
     });
+
+    // Variants are upserted by SKU so re-seeding never orphans order items.
+    for (const variant of variants ?? []) {
+      const { sku: variantSku, ...variantData } = variant;
+      await prisma.productVariant.upsert({
+        where: { sku: variantSku },
+        update: { ...variantData, productId: saved.id },
+        create: { sku: variantSku, ...variantData, productId: saved.id },
+      });
+    }
   }
 
   // Dev admin for /admin — set SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD in .env

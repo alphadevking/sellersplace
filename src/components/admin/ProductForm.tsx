@@ -41,6 +41,56 @@ export default function ProductForm({
 
       <div className="grid grid-cols-2 gap-3">
         <label className="field-label">
+          What is it?
+          <select
+            name="offeringType"
+            defaultValue={product?.offeringType ?? "PRODUCT"}
+            className="input-field"
+          >
+            <option value="PRODUCT">Physical product</option>
+            <option value="SERVICE">Service</option>
+          </select>
+        </label>
+        <label className="field-label">
+          Price display
+          <select
+            name="priceType"
+            defaultValue={product?.priceType ?? "FIXED"}
+            className="input-field"
+          >
+            <option value="FIXED">Fixed price</option>
+            <option value="FROM">Starting from</option>
+            <option value="QUOTE">Quote on request</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <label className="field-label">
+          Brand (optional)
+          <input
+            name="brand"
+            defaultValue={product?.brand ?? ""}
+            placeholder="e.g. AudioMax"
+            className="input-field"
+          />
+        </label>
+        <label className="field-label">
+          How is it sold?
+          <select
+            name="purchaseMode"
+            defaultValue={product?.purchaseMode ?? "PAY_ONLINE"}
+            className="input-field"
+          >
+            <option value="PAY_ONLINE">Pay online</option>
+            <option value="CONTACT_SELLER">Chat with seller</option>
+            <option value="BOTH">Pay online or chat</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <label className="field-label">
           Price (₦)
           <input
             name="price"

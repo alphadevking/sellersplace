@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { storeConfig } from "@/config/store";
+import { storeConfig, terms } from "@/config/store";
 import { ShieldCheck, Truck, RotateCcw } from "lucide-react";
 
 const SHOP_LINKS = [
-  { href: "/products", label: "All products" },
+  { href: "/products", label: terms.allCatalog },
   { href: "/categories", label: "Categories" },
   { href: "/wishlist", label: "Wishlist" },
   { href: "/cart", label: "Cart" },

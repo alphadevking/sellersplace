@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Grid2x2, Heart, ShoppingCart, User } from "lucide-react";
 import CartBadge from "@/components/storefront/CartBadge";
+import { terms } from "@/config/store";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/categories", label: "Categories", icon: Grid2x2 },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
-  { href: "/cart", label: "Cart", icon: ShoppingCart },
+  { href: "/cart", label: terms.cartLabel, icon: ShoppingCart },
   { href: "/account", label: "Profile", icon: User },
 ];
 
