@@ -64,6 +64,7 @@ export default function CartPage() {
     <div className="flex flex-col gap-4">
       <h1 className="text-lg font-semibold">Your cart</h1>
 
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-6">
       <div className="flex flex-col gap-3">
         {lines.map((line) => {
           const product = products.find((p) => p.id === line.productId);
@@ -126,27 +127,30 @@ export default function CartPage() {
         })}
       </div>
 
-      <div className="card-surface flex flex-col gap-2 p-4 text-sm">
-        <div className="flex justify-between text-muted">
-          <span>Subtotal</span>
-          <span>{formatCurrency(subtotal)}</span>
+      <div className="flex flex-col gap-4 lg:sticky lg:top-24">
+        <div className="card-surface flex flex-col gap-2 p-4 text-sm">
+          <div className="flex justify-between text-muted">
+            <span>Subtotal</span>
+            <span>{formatCurrency(subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-muted">
+            <span>Delivery fee</span>
+            <span>{formatCurrency(deliveryFee)}</span>
+          </div>
+          <div className="flex justify-between border-t pt-2 font-semibold" style={{ borderColor: "var(--border)" }}>
+            <span>Total</span>
+            <span>{formatCurrency(total)}</span>
+          </div>
         </div>
-        <div className="flex justify-between text-muted">
-          <span>Delivery fee</span>
-          <span>{formatCurrency(deliveryFee)}</span>
-        </div>
-        <div className="flex justify-between border-t pt-2 font-semibold" style={{ borderColor: "var(--border)" }}>
-          <span>Total</span>
-          <span>{formatCurrency(total)}</span>
-        </div>
-      </div>
 
-      <Link
-        href="/checkout"
-        className="btn-primary justify-center"
-      >
-        Proceed to checkout
-      </Link>
+        <Link
+          href="/checkout"
+          className="btn-primary justify-center"
+        >
+          Proceed to checkout
+        </Link>
+      </div>
+      </div>
     </div>
   );
 }

@@ -36,7 +36,7 @@ export default async function OrderDetailPage({
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
         <h1 className="text-lg font-semibold">Order {order.orderNumber}</h1>
         <p className="text-sm text-muted">{STATUS_LABEL[order.status] || order.status}</p>

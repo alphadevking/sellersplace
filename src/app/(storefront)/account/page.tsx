@@ -25,7 +25,7 @@ export default async function AccountPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div className="card-surface flex flex-col gap-1 p-5">
         <span className="text-xs text-muted">Signed in as</span>
         <h1 className="text-lg font-semibold">{session.user.name || session.user.email}</h1>

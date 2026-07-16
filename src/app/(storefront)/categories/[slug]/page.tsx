@@ -29,7 +29,7 @@ export default async function CategoryPage({
           No products in this category yet.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
             <ProductCard
               key={product.id}

@@ -1,8 +1,19 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getAllProducts() {
+export async function getAllProducts(query?: string) {
   return prisma.product.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(query
+        ? {
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { description: { contains: query, mode: "insensitive" } },
+              { category: { is: { name: { contains: query, mode: "insensitive" } } } },
+            ],
+          }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: { category: true },
   });
