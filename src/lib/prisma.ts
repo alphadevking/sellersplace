@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createDbAdapter } from "@/lib/db-adapter";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -11,7 +11,7 @@ function createPrismaClient() {
     throw new Error("DATABASE_URL is not set — copy .env.example to .env and fill it in.");
   }
 
-  const adapter = new PrismaPg({ connectionString });
+  const adapter = createDbAdapter(connectionString);
 
   return new PrismaClient({
     adapter,

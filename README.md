@@ -55,7 +55,10 @@ placeholder products.
 
 ```dotenv
 # Database (used by both Prisma Client at runtime and prisma.config.ts for the CLI)
+# Local Postgres:
 DATABASE_URL="postgresql://user:password@localhost:5432/sellersplace?schema=public"
+# Or a hosted Neon database (use the pooled connection string, keep sslmode=require):
+# DATABASE_URL="postgresql://USER:PASSWORD@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
 
 # Paystack
 PAYSTACK_SECRET_KEY="sk_test_xxxxxxxxxxxx"
@@ -74,6 +77,28 @@ VAPID_SUBJECT="mailto:admin@sellersplace.app"
 NEXT_PUBLIC_STORE_NAME="SellersPlace"
 NEXT_PUBLIC_STORE_PRIMARY_COLOR="#DC2626"
 ```
+
+## Database notes (Neon / hosted Postgres)
+
+- When `DATABASE_URL` points at a `*.neon.tech` host, the app automatically connects through
+  Neon's serverless driver — Postgres tunneled over a **WebSocket on port 443** — instead of
+  raw TCP on port 5432 (`src/lib/db-adapter.ts`). Many home/office networks block outbound
+  5432, which shows up as Prisma error P1001 *"Can't reach database server"*; 443 is
+  essentially always open. Local/other Postgres hosts keep using node-postgres directly.
+- The Prisma **CLI** (`prisma migrate`, `db seed` runs through the app adapter, but `migrate`
+  does not) still connects over TCP 5432. If migrations fail with P1001 on your network,
+  run them from a network that allows 5432, or use Neon's SQL editor to apply the migration
+  SQL by hand.
+- If you still can't connect, check in this order:
+  1. **Is the Neon compute active?** Free-tier databases suspend after inactivity — open the
+     project in the Neon console and retry (first request after a cold start can be slow).
+  2. **Password correct / recently rotated?** Auth failures and unreachable errors look
+     different — P1001 is network, P1000 is credentials.
+  3. **Firewall/VPN blocking 5432?** Test with `psql "<your-connection-string>"` — if psql
+     can't connect either, it's the network, not the app.
+- Never commit a real connection string to `.env.example` or anywhere else in the repo —
+  `.env` is gitignored for a reason. If a credential does leak into git history, rotate the
+  database password immediately in the Neon console.
 
 ## Re-skinning for a new client
 
