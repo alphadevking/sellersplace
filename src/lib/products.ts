@@ -1,22 +1,49 @@
 import { prisma } from "@/lib/prisma";
 
+function searchWhere(query?: string) {
+  return {
+    isActive: true,
+    ...(query
+      ? {
+          OR: [
+            { name: { contains: query, mode: "insensitive" as const } },
+            { description: { contains: query, mode: "insensitive" as const } },
+            { category: { is: { name: { contains: query, mode: "insensitive" as const } } } },
+          ],
+        }
+      : {}),
+  };
+}
+
 export async function getAllProducts(query?: string) {
   return prisma.product.findMany({
-    where: {
-      isActive: true,
-      ...(query
-        ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { description: { contains: query, mode: "insensitive" } },
-              { category: { is: { name: { contains: query, mode: "insensitive" } } } },
-            ],
-          }
-        : {}),
-    },
+    where: searchWhere(query),
     orderBy: { createdAt: "desc" },
     include: { category: true },
   });
+}
+
+/** Lightweight typeahead search: top matches plus the total count. */
+export async function searchProducts(query: string, limit = 8) {
+  const where = searchWhere(query);
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        price: true,
+        compareAtPrice: true,
+        images: true,
+        category: { select: { slug: true, name: true } },
+      },
+    }),
+    prisma.product.count({ where }),
+  ]);
+  return { products, total };
 }
 
 export async function getProductBySlug(slug: string) {

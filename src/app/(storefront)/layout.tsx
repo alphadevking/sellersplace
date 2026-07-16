@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Search, ShoppingCart, User, Heart } from "lucide-react";
+import { ShoppingCart, User, Heart } from "lucide-react";
 import { storeConfig } from "@/config/store";
 import { auth } from "@/lib/auth";
 import BottomNav from "@/components/storefront/BottomNav";
 import CartBadge from "@/components/storefront/CartBadge";
 import Footer from "@/components/storefront/Footer";
+import SearchBar from "@/components/storefront/SearchBar";
 import { CartProvider } from "@/lib/cart-context";
 
 const DESKTOP_NAV = [
@@ -41,17 +42,7 @@ export default async function StorefrontLayout({
               ))}
             </nav>
 
-            <form action="/products" className="hidden max-w-md flex-1 md:block" role="search">
-              <label className="flex items-center gap-2 rounded-xl bg-surface px-3.5 py-2.5 text-sm text-muted transition-shadow focus-within:ring-2" style={{ ["--tw-ring-color" as string]: "var(--brand-soft)" }}>
-                <Search className="h-4 w-4 shrink-0" />
-                <input
-                  type="search"
-                  name="q"
-                  placeholder="Search products…"
-                  className="w-full bg-transparent text-foreground outline-none placeholder:text-muted"
-                />
-              </label>
-            </form>
+            <SearchBar className="hidden max-w-md flex-1 md:block" />
 
             <div className="flex items-center gap-4">
               <Link
@@ -76,17 +67,7 @@ export default async function StorefrontLayout({
             </div>
           </div>
           <div className="mx-auto max-w-6xl px-4 pb-3.5 md:hidden">
-            <form action="/products" role="search">
-              <label className="flex items-center gap-2 rounded-xl bg-surface px-3.5 py-2.5 text-sm text-muted transition-shadow focus-within:ring-2" style={{ ["--tw-ring-color" as string]: "var(--brand-soft)" }}>
-                <Search className="h-4 w-4 shrink-0" />
-                <input
-                  type="search"
-                  name="q"
-                  placeholder="Search products…"
-                  className="w-full bg-transparent text-foreground outline-none placeholder:text-muted"
-                />
-              </label>
-            </form>
+            <SearchBar />
           </div>
         </header>
 
