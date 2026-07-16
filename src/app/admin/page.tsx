@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote, Package, ShoppingBag, Users } from "lucide-react";
+import { Banknote, MessageSquare, Package, ShoppingBag, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
@@ -7,8 +7,16 @@ import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/StatusB
 export const metadata = { title: "Dashboard" };
 
 export default async function AdminDashboardPage() {
-  const [revenue, orderCount, openOrderCount, customerCount, productCount, lowStock, recentOrders] =
-    await Promise.all([
+  const [
+    revenue,
+    orderCount,
+    openOrderCount,
+    customerCount,
+    productCount,
+    newInquiryCount,
+    lowStock,
+    recentOrders,
+  ] = await Promise.all([
       prisma.order.aggregate({
         _sum: { total: true },
         where: { paymentStatus: "PAID" },
@@ -19,6 +27,7 @@ export default async function AdminDashboardPage() {
       }),
       prisma.user.count({ where: { role: "CUSTOMER" } }),
       prisma.product.count({ where: { isActive: true } }),
+      prisma.inquiry.count({ where: { status: "NEW" } }),
       prisma.product.findMany({
         where: { isActive: true, stock: { lte: 5 } },
         orderBy: { stock: "asc" },
@@ -31,7 +40,13 @@ export default async function AdminDashboardPage() {
       }),
     ]);
 
-  const stats = [
+  const stats: Array<{
+    label: string;
+    value: string;
+    hint?: string;
+    icon: typeof Banknote;
+    href?: string;
+  }> = [
     {
       label: "Revenue (paid)",
       value: formatCurrency(Number(revenue._sum.total ?? 0)),
@@ -45,27 +60,49 @@ export default async function AdminDashboardPage() {
     },
     { label: "Customers", value: `${customerCount}`, icon: Users },
     { label: "Active products", value: `${productCount}`, icon: Package },
+    {
+      label: "Inquiries",
+      value: `${newInquiryCount}`,
+      hint: newInquiryCount > 0 ? "new leads waiting" : undefined,
+      icon: MessageSquare,
+      href: "/admin/inquiries",
+    },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-lg font-semibold">Dashboard</h1>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map(({ label, value, hint, icon: Icon }) => (
-          <div key={label} className="card flex flex-col gap-2 p-4">
-            <div className="flex items-center gap-2 text-xs text-muted">
-              <Icon className="h-3.5 w-3.5" />
-              {label}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {stats.map(({ label, value, hint, icon: Icon, href }) => {
+          const body = (
+            <>
+              <div className="flex items-center gap-2 text-xs text-muted">
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </div>
+              <span className="text-xl font-semibold tracking-tight">{value}</span>
+              {hint && (
+                <span className="text-xs" style={{ color: "var(--brand)" }}>
+                  {hint}
+                </span>
+              )}
+            </>
+          );
+          return href ? (
+            <Link
+              key={label}
+              href={href}
+              className="card flex flex-col gap-2 p-4 transition-colors hover:bg-surface"
+            >
+              {body}
+            </Link>
+          ) : (
+            <div key={label} className="card flex flex-col gap-2 p-4">
+              {body}
             </div>
-            <span className="text-xl font-semibold tracking-tight">{value}</span>
-            {hint && (
-              <span className="text-xs" style={{ color: "var(--brand)" }}>
-                {hint}
-              </span>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <section>

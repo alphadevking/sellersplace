@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarClock } from "lucide-react";
 import { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
@@ -80,6 +81,19 @@ export default async function AdminOrdersPage({
                   })}{" "}
                   · {order.items.length} item{order.items.length !== 1 ? "s" : ""}
                 </span>
+                {order.serviceDate && (
+                  <span
+                    className="mt-0.5 flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                    style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+                  >
+                    <CalendarClock className="h-3 w-3" />
+                    Booking:{" "}
+                    {order.serviceDate.toLocaleString("en-NG", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <OrderStatusBadge status={order.status} />

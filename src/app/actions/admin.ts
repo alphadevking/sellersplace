@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { OfferingType, OrderStatus, PriceType, Prisma, PurchaseMode } from "@prisma/client";
+import {
+  InquiryStatus,
+  OfferingType,
+  OrderStatus,
+  PriceType,
+  Prisma,
+  PurchaseMode,
+} from "@prisma/client";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { updateOrderStatus } from "@/lib/orders";
@@ -22,6 +29,21 @@ export async function setOrderStatus(formData: FormData) {
 
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+}
+
+export async function setInquiryStatus(formData: FormData) {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  const status = formData.get("status") as string;
+  if (!id || !Object.values(InquiryStatus).includes(status as InquiryStatus)) {
+    throw new Error("Invalid inquiry status update");
+  }
+
+  await prisma.inquiry.update({ where: { id }, data: { status: status as InquiryStatus } });
+
+  revalidatePath("/admin/inquiries");
   revalidatePath("/admin");
 }
 

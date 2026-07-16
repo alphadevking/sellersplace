@@ -20,6 +20,7 @@ model User {
   orders            Order[]
   pushSubscriptions PushSubscription[]
   wishlist          WishlistItem[]
+  inquiries         Inquiry[]
 }
 
 model Address {
@@ -76,6 +77,7 @@ model Product {
   category       Category?        @relation(fields: [categoryId], references: [id])
   variants       ProductVariant[]
   wishlistItems  WishlistItem[]
+  inquiries      Inquiry[]
 }
 
 model ProductVariant {
@@ -152,6 +154,27 @@ model OrderStatusEvent {
   order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
+/// A chat/quote request for a contact-mode offering. Captures WhatsApp clicks
+/// and inquiry-form submissions so leads are tracked in admin, not just fired
+/// into an external chat app.
+model Inquiry {
+  id          String         @id @default(cuid())
+  productId   String?
+  userId      String?
+  /// Variant/tier the customer was looking at, snapshotted as text.
+  variantName String?
+  name        String?
+  /// Email or phone the customer wants to be reached on (form inquiries).
+  contact     String?
+  message     String?
+  channel     InquiryChannel @default(FORM)
+  status      InquiryStatus  @default(NEW)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  product     Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
@@ -179,6 +202,18 @@ enum PurchaseMode {
 enum OfferingType {
   PRODUCT
   SERVICE
+}
+
+enum InquiryChannel {
+  WHATSAPP
+  PHONE
+  FORM
+}
+
+enum InquiryStatus {
+  NEW
+  RESPONDED
+  CLOSED
 }
 
 enum PriceType {

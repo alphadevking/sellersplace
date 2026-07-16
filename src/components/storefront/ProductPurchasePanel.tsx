@@ -6,6 +6,8 @@ import { MessageCircle, Phone } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatCurrency } from "@/lib/currency";
 import { storeConfig, whatsappLink } from "@/config/store";
+import { logContactClick } from "@/app/actions/inquiries";
+import InquiryForm from "@/components/storefront/InquiryForm";
 
 export type PanelVariant = {
   id: string;
@@ -191,24 +193,29 @@ export default function ProductPurchasePanel({
                 href={chatHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => void logContactClick(product.id, "WHATSAPP", selected?.name)}
                 className={contactOnly ? "btn-primary flex-1" : "btn-outline flex-1"}
               >
                 <MessageCircle className="h-4 w-4" /> Chat with seller
               </a>
             )}
             {storeConfig.phone && (
-              <a href={`tel:${storeConfig.phone}`} className="btn-ghost" aria-label="Call seller">
+              <a
+                href={`tel:${storeConfig.phone}`}
+                onClick={() => void logContactClick(product.id, "PHONE", selected?.name)}
+                className="btn-ghost"
+                aria-label="Call seller"
+              >
                 <Phone className="h-4 w-4" /> Call
               </a>
             )}
           </div>
         )}
 
-        {contactOnly && !canContact && (
-          <p className="card-surface p-3 text-xs text-muted">
-            This {isService ? "service" : "item"} is arranged via direct contact with the
-            seller. Contact details are not configured yet — please check back soon.
-          </p>
+        {contactOnly && (
+          <div className="mt-1">
+            <InquiryForm productId={product.id} variantName={selected?.name} />
+          </div>
         )}
       </div>
     </div>
