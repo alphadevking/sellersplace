@@ -48,7 +48,7 @@ pnpm dlx prisma migrate dev --name init
 pnpm dev
 ```
 
-Then open `http://localhost:3000` — you should see the SellersPlace home page with
+Then open `http://localhost:3005` — you should see the SellersPlace home page with
 placeholder products.
 
 ## Environment variables
@@ -63,7 +63,7 @@ NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY="pk_test_xxxxxxxxxxxx"
 
 # Auth
 AUTH_SECRET="generate-a-random-secret-here"
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:3005"
 
 # Web Push (VAPID keys — from step 4 above)
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=""
