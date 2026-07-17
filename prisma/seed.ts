@@ -52,6 +52,7 @@ async function main() {
     purchaseMode?: PurchaseMode;
     offeringType?: OfferingType;
     priceType?: PriceType;
+    depositPercent?: number;
     price: number;
     compareAtPrice: number;
     stock: number;
@@ -324,6 +325,7 @@ async function main() {
       offeringType: OfferingType.SERVICE,
       priceType: PriceType.FROM,
       purchaseMode: PurchaseMode.BOTH,
+      depositPercent: 30, // book with 30% down, pay the rest after the job
       price: 25000,
       compareAtPrice: 30000,
       stock: 0,
@@ -395,8 +397,80 @@ async function main() {
     },
   });
 
+  // Demo customer with a delivered order + reviews, so ratings and the
+  // verified-buyer flow have visible sample data out of the box.
+  const customer = await prisma.user.upsert({
+    where: { email: "customer@example.com" },
+    update: {},
+    create: {
+      email: "customer@example.com",
+      name: "Ada Demo",
+      phone: "+2348111111111",
+      passwordHash: await bcrypt.hash("customer123", 10),
+    },
+  });
+
+  const watch = await prisma.product.findUniqueOrThrow({ where: { slug: "smart-watch" } });
+  const headphones = await prisma.product.findUniqueOrThrow({
+    where: { slug: "wireless-headphones" },
+  });
+
+  const demoOrderNumber = "SS-DEMO-1";
+  let demoOrder = await prisma.order.findUnique({ where: { orderNumber: demoOrderNumber } });
+  if (!demoOrder) {
+    demoOrder = await prisma.order.create({
+      data: {
+        orderNumber: demoOrderNumber,
+        userId: customer.id,
+        subtotal: 135998,
+        deliveryFee: 1500,
+        total: 137498,
+        amountPaid: 137498,
+        status: "DELIVERED",
+        paymentStatus: "PAID",
+        items: {
+          create: [
+            { productId: watch.id, quantity: 1, unitPrice: watch.price },
+            { productId: headphones.id, quantity: 1, unitPrice: headphones.price },
+          ],
+        },
+        statusHistory: { create: { status: "DELIVERED", note: "Demo order" } },
+      },
+    });
+  }
+
+  const demoReviews = [
+    {
+      productId: watch.id,
+      rating: 5,
+      body: "Battery really does last the week. Strap swap took seconds — very happy.",
+    },
+    {
+      productId: headphones.id,
+      rating: 4,
+      body: "Great noise cancelling for the price. Slightly tight fit out of the box.",
+    },
+  ];
+  for (const review of demoReviews) {
+    await prisma.review.upsert({
+      where: { productId_userId: { productId: review.productId, userId: customer.id } },
+      update: { rating: review.rating, body: review.body },
+      create: { ...review, userId: customer.id },
+    });
+    const agg = await prisma.review.aggregate({
+      where: { productId: review.productId },
+      _avg: { rating: true },
+      _count: true,
+    });
+    await prisma.product.update({
+      where: { id: review.productId },
+      data: { ratingAvg: agg._avg.rating ?? null, ratingCount: agg._count },
+    });
+  }
+
   console.log(`Seeded ${categories.length} categories and ${products.length} products.`);
   console.log(`Admin user: ${adminEmail} (password: ${adminPassword})`);
+  console.log(`Demo customer: customer@example.com (password: customer123)`);
 }
 
 main()

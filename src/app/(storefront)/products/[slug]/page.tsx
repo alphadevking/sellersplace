@@ -6,6 +6,8 @@ import { getWishlistProductIds } from "@/lib/wishlist";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import ProductCard from "@/components/storefront/ProductCard";
 import ProductPurchasePanel from "@/components/storefront/ProductPurchasePanel";
+import ReviewForm from "@/components/storefront/ReviewForm";
+import Stars from "@/components/storefront/Stars";
 import WishlistButton from "@/components/storefront/WishlistButton";
 
 export default async function ProductDetailPage({
@@ -74,6 +76,13 @@ export default async function ProductDetailPage({
               variant="detail"
             />
           </div>
+          {product.ratingCount > 0 && (
+            <div className="flex items-center gap-1.5 text-xs text-muted">
+              <Stars rating={Number(product.ratingAvg ?? 0)} />
+              {Number(product.ratingAvg ?? 0).toFixed(1)} ({product.ratingCount} review
+              {product.ratingCount !== 1 ? "s" : ""})
+            </div>
+          )}
         </div>
 
         <ProductPurchasePanel
@@ -88,6 +97,7 @@ export default async function ProductDetailPage({
             purchaseMode: product.purchaseMode,
             offeringType: product.offeringType,
             priceType: product.priceType,
+            depositPercent: product.depositPercent,
           }}
           variants={product.variants.map((v) => ({
             id: v.id,
@@ -126,6 +136,54 @@ export default async function ProductDetailPage({
         )}
       </div>
     </div>
+
+    <section className="md:max-w-2xl">
+      <h2 className="mb-3 text-sm font-semibold">
+        Reviews{product.ratingCount > 0 ? ` (${product.ratingCount})` : ""}
+      </h2>
+      <div className="flex flex-col gap-3">
+        {product.reviews.length === 0 && (
+          <p className="card-surface p-4 text-sm text-muted">
+            No reviews yet — be the first verified buyer to leave one.
+          </p>
+        )}
+        {product.reviews.map((review) => (
+          <div key={review.id} className="card flex flex-col gap-1.5 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Stars rating={review.rating} />
+                <span className="text-sm font-medium">
+                  {review.user.name?.split(" ")[0] || "Customer"}
+                </span>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+                >
+                  Verified buyer
+                </span>
+              </div>
+              <span className="text-xs text-muted">
+                {review.createdAt.toLocaleDateString("en-NG", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </span>
+            </div>
+            {review.body && (
+              <p className="text-sm leading-relaxed text-foreground/80">{review.body}</p>
+            )}
+          </div>
+        ))}
+        {session?.user ? (
+          <ReviewForm productId={product.id} productSlug={product.slug} />
+        ) : (
+          <p className="card-surface p-4 text-sm text-muted">
+            Bought this? Sign in to leave a verified review.
+          </p>
+        )}
+      </div>
+    </section>
 
     {related.length > 0 && (
       <section>

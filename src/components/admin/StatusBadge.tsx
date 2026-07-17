@@ -11,6 +11,7 @@ const ORDER_STYLES: Record<OrderStatus, string> = {
 
 const PAYMENT_STYLES: Record<PaymentStatus, string> = {
   PENDING: "bg-amber-50 text-amber-700",
+  PARTIALLY_PAID: "bg-teal-50 text-teal-700",
   PAID: "bg-green-50 text-green-700",
   FAILED: "bg-red-50 text-red-700",
   REFUNDED: "bg-gray-100 text-gray-600",
@@ -27,7 +28,7 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   return (
     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${PAYMENT_STYLES[status]}`}>
-      {status.toLowerCase()}
+      {status.toLowerCase().replace("_", " ")}
     </span>
   );
 }

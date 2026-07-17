@@ -57,7 +57,7 @@ export default async function AdminOrderDetailPage({
               <div key={item.id} className="flex items-center justify-between text-sm">
                 <div className="flex flex-col">
                   <span className="font-medium">
-                    {item.product.name}
+                    {item.product?.name ?? item.titleOverride ?? "Custom item"}
                     {item.variantName && (
                       <span className="font-normal text-muted"> · {item.variantName}</span>
                     )}
@@ -85,8 +85,33 @@ export default async function AdminOrderDetailPage({
                 <span>Total</span>
                 <span>{formatCurrency(Number(order.total))}</span>
               </div>
+              {Number(order.amountPaid) > 0 && Number(order.amountPaid) < Number(order.total) && (
+                <>
+                  <div className="flex justify-between text-muted">
+                    <span>Paid so far</span>
+                    <span>{formatCurrency(Number(order.amountPaid))}</span>
+                  </div>
+                  <div className="flex justify-between font-medium" style={{ color: "var(--brand)" }}>
+                    <span>Balance due</span>
+                    <span>{formatCurrency(Number(order.total) - Number(order.amountPaid))}</span>
+                  </div>
+                </>
+              )}
             </div>
           </section>
+
+          {order.accessToken && (
+            <section className="card flex flex-col gap-1.5 p-4 text-sm">
+              <h2 className="text-sm font-semibold">Invoice pay link</h2>
+              <p className="text-xs text-muted">
+                Share this private link with the customer — they can view and pay without an
+                account.
+              </p>
+              <code className="card-surface break-all rounded-lg p-2.5 text-xs">
+                /invoice/{order.accessToken}
+              </code>
+            </section>
+          )}
 
           <section className="card flex flex-col gap-1 p-4 text-sm">
             <h2 className="mb-1 text-sm font-semibold">Customer</h2>

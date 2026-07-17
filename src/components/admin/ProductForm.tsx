@@ -89,6 +89,19 @@ export default function ProductForm({
         </label>
       </div>
 
+      <label className="field-label">
+        Deposit % (optional — charge part upfront, collect the balance later)
+        <input
+          name="depositPercent"
+          type="number"
+          min="1"
+          max="99"
+          placeholder="e.g. 30"
+          defaultValue={product?.depositPercent ?? ""}
+          className="input-field"
+        />
+      </label>
+
       <div className="grid grid-cols-2 gap-3">
         <label className="field-label">
           Price (₦)

@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -30,6 +31,80 @@ export async function setOrderStatus(formData: FormData) {
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
+}
+
+type InvoiceLine = { title: string; quantity: number; unitPrice: number };
+
+/**
+ * Issues an invoice for quoted/bespoke work (usually from an inquiry): creates
+ * an order with custom line items and an unguessable pay link the customer can
+ * open without an account.
+ */
+export async function createInvoice(formData: FormData) {
+  await requireAdmin();
+
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const name = (formData.get("name") as string)?.trim();
+  const phone = (formData.get("phone") as string)?.trim() || null;
+  const note = (formData.get("note") as string)?.trim() || null;
+  const inquiryId = (formData.get("inquiryId") as string) || null;
+
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) throw new Error("Valid customer email required");
+  if (!name) throw new Error("Customer name required");
+
+  let lines: InvoiceLine[];
+  try {
+    lines = JSON.parse((formData.get("lines") as string) || "[]");
+  } catch {
+    throw new Error("Invalid invoice lines");
+  }
+  lines = lines
+    .map((l) => ({
+      title: String(l.title || "").trim(),
+      quantity: Math.max(1, Math.trunc(Number(l.quantity) || 1)),
+      unitPrice: Number(l.unitPrice),
+    }))
+    .filter((l) => l.title && Number.isFinite(l.unitPrice) && l.unitPrice > 0);
+  if (lines.length === 0) throw new Error("At least one line item with a price is required");
+
+  const total = lines.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: { name, ...(phone ? { phone } : {}) },
+    create: { email, name, phone, isGuest: true },
+  });
+
+  const order = await prisma.order.create({
+    data: {
+      orderNumber: `SS-INV-${Date.now().toString(36).toUpperCase()}`,
+      userId: user.id,
+      isInvoice: true,
+      accessToken: crypto.randomBytes(24).toString("base64url"),
+      customerNote: note,
+      subtotal: total,
+      deliveryFee: 0,
+      total,
+      items: {
+        create: lines.map((l) => ({
+          titleOverride: l.title,
+          quantity: l.quantity,
+          unitPrice: l.unitPrice,
+        })),
+      },
+      statusHistory: { create: { status: "PENDING", note: "Invoice issued" } },
+    },
+  });
+
+  if (inquiryId) {
+    await prisma.inquiry
+      .update({ where: { id: inquiryId }, data: { status: "RESPONDED" } })
+      .catch(() => {}); // stale inquiry id shouldn't block the invoice
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/inquiries");
+  redirect(`/admin/orders/${order.id}`);
 }
 
 export async function setInquiryStatus(formData: FormData) {
@@ -88,6 +163,12 @@ function productDataFromForm(formData: FormData) {
     throw new Error("Invalid price type");
   }
 
+  const depositRaw = (formData.get("depositPercent") as string)?.trim();
+  const depositPercent = depositRaw ? Math.trunc(Number(depositRaw)) : null;
+  if (depositPercent !== null && (depositPercent < 1 || depositPercent > 99)) {
+    throw new Error("Deposit must be between 1 and 99 percent");
+  }
+
   return {
     name,
     description: (formData.get("description") as string)?.trim() || null,
@@ -95,6 +176,7 @@ function productDataFromForm(formData: FormData) {
     purchaseMode: purchaseModeRaw as PurchaseMode,
     offeringType: offeringTypeRaw as OfferingType,
     priceType: priceTypeRaw as PriceType,
+    depositPercent,
     price: new Prisma.Decimal(price),
     compareAtPrice: compareAtPrice === null ? null : new Prisma.Decimal(compareAtPrice),
     stock: Math.max(0, Math.trunc(Number(formData.get("stock")) || 0)),

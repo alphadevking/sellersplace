@@ -32,6 +32,8 @@ const CARD_SELECT = {
   purchaseMode: true,
   offeringType: true,
   priceType: true,
+  ratingAvg: true,
+  ratingCount: true,
   category: { select: { slug: true, name: true } },
 } as const;
 
@@ -74,11 +76,14 @@ async function findStage(where: NonNullable<ReturnType<typeof phraseWhere>>, lim
 export async function getPopularProducts(limit = 8, excludeIds: string[] = []) {
   const sales = await prisma.orderItem.groupBy({
     by: ["productId"],
+    where: { productId: { not: null } }, // custom invoice lines have no product
     _sum: { quantity: true },
     orderBy: { _sum: { quantity: "desc" } },
     take: limit * 2, // headroom: some best sellers may be inactive/excluded
   });
-  const rankedIds = sales.map((s) => s.productId).filter((id) => !excludeIds.includes(id));
+  const rankedIds = sales
+    .map((s) => s.productId)
+    .filter((id): id is string => id !== null && !excludeIds.includes(id));
 
   const bestSellers = rankedIds.length
     ? await prisma.product.findMany({

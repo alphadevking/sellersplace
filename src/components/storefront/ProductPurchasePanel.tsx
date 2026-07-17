@@ -28,6 +28,7 @@ export type PanelProduct = {
   purchaseMode: "PAY_ONLINE" | "CONTACT_SELLER" | "BOTH";
   offeringType: "PRODUCT" | "SERVICE";
   priceType: "FIXED" | "FROM" | "QUOTE";
+  depositPercent: number | null;
 };
 
 /**
@@ -116,6 +117,18 @@ export default function ProductPurchasePanel({
             <span className="text-xs text-muted">Only {stock} left</span>
           ) : null)}
         {sku && <span className="text-xs text-muted">SKU: {sku}</span>}
+        {canPayOnline &&
+          product.depositPercent != null &&
+          product.depositPercent >= 1 &&
+          product.depositPercent <= 99 && (
+            <span
+              className="mt-0.5 w-fit rounded-full px-2 py-0.5 text-[11px] font-medium"
+              style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+            >
+              Pay {product.depositPercent}% deposit (
+              {formatCurrency((price * product.depositPercent) / 100)}) now, balance later
+            </span>
+          )}
       </div>
 
       {variants.length > 0 && (

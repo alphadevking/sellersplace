@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
+import Stars from "@/components/storefront/Stars";
 import WishlistButton from "@/components/storefront/WishlistButton";
 
 export type ProductCardData = {
@@ -15,6 +16,8 @@ export type ProductCardData = {
   purchaseMode?: "PAY_ONLINE" | "CONTACT_SELLER" | "BOTH";
   offeringType?: "PRODUCT" | "SERVICE";
   priceType?: "FIXED" | "FROM" | "QUOTE";
+  ratingAvg?: number | string | { toString(): string } | null;
+  ratingCount?: number;
   category?: { slug: string } | null;
 };
 
@@ -83,6 +86,12 @@ export default function ProductCard({
           <span className="text-xs text-muted line-through">{formatCurrency(compareAt)}</span>
         )}
       </span>
+      {(product.ratingCount ?? 0) > 0 && (
+        <span className="flex items-center gap-1 text-[11px] text-muted">
+          <Stars rating={Number(product.ratingAvg ?? 0)} size={12} />(
+          {product.ratingCount})
+        </span>
+      )}
     </Link>
   );
 }

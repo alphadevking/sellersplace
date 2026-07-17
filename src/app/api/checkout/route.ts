@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { initializePaystackTransaction } from "@/lib/paystack";
+import { initOrderPayment } from "@/lib/payments";
 import { storeConfig } from "@/config/store";
 
 type CheckoutItem = { productId: string; variantId?: string; quantity: number };
@@ -163,24 +163,26 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Paystack expects amount in kobo (smallest unit) for NGN
-    const paystackRes = await initializePaystackTransaction({
-      email,
-      amountKobo: Math.round(total * 100),
-      reference: orderNumber,
+    // Deposit-aware charge: lines whose product declares depositPercent are
+    // charged that fraction now (balance collected later); the delivery fee
+    // is always charged in full.
+    const chargeNow =
+      resolved.reduce((sum, line) => {
+        const dp = line.product.depositPercent;
+        const fraction = dp && dp >= 1 && dp <= 99 ? dp / 100 : 1;
+        return sum + line.unitPrice * line.item.quantity * fraction;
+      }, 0) + deliveryFee;
+    const roundedCharge = Math.round(chargeNow * 100) / 100;
+    const isDeposit = roundedCharge < total - 0.01;
+
+    const { authorizationUrl } = await initOrderPayment({
+      order: { ...order, user: { email } },
+      amount: roundedCharge,
+      kind: isDeposit ? "DEPOSIT" : "FULL",
       callbackUrl: `${req.nextUrl.origin}/orders/${order.id}`,
-      metadata: { orderId: order.id },
     });
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { paystackRef: orderNumber },
-    });
-
-    return NextResponse.json({
-      orderId: order.id,
-      authorizationUrl: paystackRes.data.authorization_url,
-    });
+    return NextResponse.json({ orderId: order.id, authorizationUrl });
   } catch (err) {
     console.error("Checkout error:", err);
     return NextResponse.json({ error: "Checkout failed" }, { status: 500 });

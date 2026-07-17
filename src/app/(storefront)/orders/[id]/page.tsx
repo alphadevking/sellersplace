@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
 import { Check } from "lucide-react";
+import PayBalanceButton from "@/components/storefront/PayBalanceButton";
 
 const TIMELINE_STEPS = ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 
@@ -82,7 +83,7 @@ export default async function OrderDetailPage({
           <div key={item.id} className="card flex items-center justify-between p-4">
             <div className="flex flex-col">
               <span className="text-sm font-medium">
-                {item.product.name}
+                {item.product?.name ?? item.titleOverride ?? "Custom item"}
                 {item.variantName && (
                   <span className="font-normal text-muted"> · {item.variantName}</span>
                 )}
@@ -107,7 +108,27 @@ export default async function OrderDetailPage({
           <span>Total</span>
           <span>{formatCurrency(Number(order.total))}</span>
         </div>
+        {Number(order.amountPaid) > 0 && Number(order.amountPaid) < Number(order.total) && (
+          <>
+            <div className="flex justify-between text-muted">
+              <span>Paid so far</span>
+              <span>{formatCurrency(Number(order.amountPaid))}</span>
+            </div>
+            <div className="flex justify-between font-medium" style={{ color: "var(--brand)" }}>
+              <span>Balance due</span>
+              <span>{formatCurrency(Number(order.total) - Number(order.amountPaid))}</span>
+            </div>
+          </>
+        )}
       </div>
+
+      {(order.paymentStatus === "PARTIALLY_PAID" || order.paymentStatus === "PENDING") &&
+        Number(order.total) - Number(order.amountPaid) > 0 && (
+          <PayBalanceButton
+            orderId={order.id}
+            balance={Number(order.total) - Number(order.amountPaid)}
+          />
+        )}
 
       {order.address && (
         <div className="card-surface flex flex-col gap-1 p-4 text-sm">

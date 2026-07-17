@@ -16,6 +16,11 @@ export async function getProductBySlug(slug: string) {
     include: {
       category: true,
       variants: { where: { isActive: true }, orderBy: { createdAt: "asc" } },
+      reviews: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        include: { user: { select: { name: true } } },
+      },
     },
   });
 }

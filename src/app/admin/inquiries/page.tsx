@@ -139,23 +139,44 @@ export default async function AdminInquiriesPage({
                   </p>
                 )}
 
-                <form action={setInquiryStatus} className="flex items-center gap-2">
-                  <input type="hidden" name="id" value={inquiry.id} />
-                  <select
-                    name="status"
-                    defaultValue={inquiry.status}
-                    className="input-field w-auto py-1.5 text-xs"
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <form action={setInquiryStatus} className="flex items-center gap-2">
+                    <input type="hidden" name="id" value={inquiry.id} />
+                    <select
+                      name="status"
+                      defaultValue={inquiry.status}
+                      className="input-field w-auto py-1.5 text-xs"
+                    >
+                      {Object.values(InquiryStatus).map((s) => (
+                        <option key={s} value={s}>
+                          {s.charAt(0) + s.slice(1).toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="submit" className="btn-ghost px-3 py-1.5 text-xs">
+                      Update
+                    </button>
+                  </form>
+                  <Link
+                    href={{
+                      pathname: "/admin/invoices/new",
+                      query: {
+                        inquiryId: inquiry.id,
+                        ...(inquiry.contact?.includes("@")
+                          ? { email: inquiry.contact }
+                          : inquiry.user
+                            ? { email: inquiry.user.email }
+                            : {}),
+                        ...(inquiry.name || inquiry.user?.name
+                          ? { name: inquiry.name || inquiry.user?.name || "" }
+                          : {}),
+                      },
+                    }}
+                    className="btn-outline px-3 py-1.5 text-xs"
                   >
-                    {Object.values(InquiryStatus).map((s) => (
-                      <option key={s} value={s}>
-                        {s.charAt(0) + s.slice(1).toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="submit" className="btn-ghost px-3 py-1.5 text-xs">
-                    Update
-                  </button>
-                </form>
+                    Create invoice
+                  </Link>
+                </div>
               </div>
             );
           })}
