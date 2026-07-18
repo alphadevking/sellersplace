@@ -1,0 +1,6 @@
+{
+  "projectId": "99db44c8-1b4a-48d1-a70b-56b33254a09c",
+  "projectName": "SellersPlace Design System",
+  "readmeHeader": ".design-sync/conventions.md",
+  "note": "Off-script spec sync: this repo is a Next.js app (no Storybook, no dist). The project carries tokens + component recipes + preview cards derived from src/app/globals.css and src/config/store.ts — no compiled component bundle yet. No _ds_sync.json anchor is uploaded, so every sync re-verifies; that is intentional."
+}
