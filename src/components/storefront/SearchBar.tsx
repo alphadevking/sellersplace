@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import { terms } from "@/config/store";
@@ -34,6 +34,7 @@ export default function SearchBar({ className = "" }: { className?: string }) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [trending, setTrending] = useState<string[] | null>(null);
 
   const trimmed = query.trim();
 
@@ -76,6 +77,23 @@ export default function SearchBar({ className = "" }: { className?: string }) {
     };
   }, [trimmed]);
 
+  // Trending terms load once, on first open with an empty box (Jumia-style).
+  useEffect(() => {
+    if (!open || trending !== null || trimmed.length >= MIN_QUERY_LENGTH) return;
+    let cancelled = false;
+    fetch("/api/products?trending=1")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setTrending(data.trending || []);
+      })
+      .catch(() => {
+        if (!cancelled) setTrending([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, trending, trimmed]);
+
   // Close on click/tap outside.
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -113,7 +131,10 @@ export default function SearchBar({ className = "" }: { className?: string }) {
     }
   }
 
-  const showDropdown = open && trimmed.length >= MIN_QUERY_LENGTH;
+  const showResults = open && trimmed.length >= MIN_QUERY_LENGTH;
+  const showTrending =
+    open && trimmed.length < MIN_QUERY_LENGTH && !!trending && trending.length > 0;
+  const showDropdown = showResults || showTrending;
 
   return (
     <div ref={rootRef} className={`relative ${className}`}>
@@ -166,7 +187,28 @@ export default function SearchBar({ className = "" }: { className?: string }) {
           className="absolute inset-x-0 top-full z-40 mt-2 overflow-hidden rounded-xl border bg-background shadow-lg shadow-black/5"
           style={{ borderColor: "var(--border)" }}
         >
-          {results.length === 0 ? (
+          {showTrending ? (
+            <div className="py-1">
+              <p className="px-3 py-1.5 text-xs font-medium text-muted">Trending searches</p>
+              <ul>
+                {trending!.map((term) => (
+                  <li key={term}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false);
+                        router.push(`/products?q=${encodeURIComponent(term)}`);
+                      }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-surface"
+                    >
+                      <TrendingUp className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--brand)" }} />
+                      {term}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : results.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted">
               {loading ? "Searching…" : `No products match “${trimmed}”.`}
             </p>

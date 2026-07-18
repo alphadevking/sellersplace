@@ -41,7 +41,7 @@ export default async function HomePage() {
             {storeConfig.description}
           </p>
           <Link
-            href="/categories"
+            href="/products"
             className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-medium transition-transform active:scale-[0.98] sm:px-5 sm:py-3"
             style={{ color: "var(--brand)" }}
           >
@@ -54,8 +54,8 @@ export default async function HomePage() {
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Categories</h2>
-          <Link href="/categories" className="text-xs text-muted hover:text-foreground">
+          <h2 className="text-sm font-semibold">{terms.exploreHeading}</h2>
+          <Link href="/products" className="text-xs text-muted hover:text-foreground">
             View all
           </Link>
         </div>
@@ -68,7 +68,7 @@ export default async function HomePage() {
             {categories.map((cat) => (
               <Link
                 key={cat.slug}
-                href={`/categories/${cat.slug}`}
+                href={`/products?category=${cat.slug}`}
                 className="card-surface flex flex-col items-center gap-1.5 p-3 text-center transition-transform hover:-translate-y-0.5 active:scale-95"
               >
                 {cat.imageUrl ? (

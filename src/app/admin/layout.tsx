@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { storeConfig } from "@/config/store";
 import { requireAdmin } from "@/lib/admin";
 import AdminNav from "@/components/admin/AdminNav";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata = { title: "Admin" };
 
@@ -29,12 +30,15 @@ export default async function AdminLayout({
               Admin
             </span>
           </Link>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-sm text-foreground/80 hover:text-foreground"
-          >
-            View store <ExternalLink className="h-3.5 w-3.5" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm text-foreground/80 hover:text-foreground"
+            >
+              View store <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
         <div className="mx-auto max-w-5xl px-4 pb-2">
           <AdminNav />

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Grid2x2, Heart, ShoppingCart, User } from "lucide-react";
+import { Home, Compass, Heart, ShoppingCart, User } from "lucide-react";
 import CartBadge from "@/components/storefront/CartBadge";
 import { terms } from "@/config/store";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/categories", label: "Categories", icon: Grid2x2 },
+  { href: "/products", label: terms.explore, icon: Compass },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/cart", label: terms.cartLabel, icon: ShoppingCart },
   { href: "/account", label: "Profile", icon: User },
@@ -18,7 +18,10 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-background md:hidden">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background md:hidden"
+      style={{ borderColor: "var(--border)" }}
+    >
       <div className="mx-auto flex max-w-3xl items-center justify-between px-2 py-2">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;

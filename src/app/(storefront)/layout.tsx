@@ -6,12 +6,12 @@ import BottomNav from "@/components/storefront/BottomNav";
 import CartBadge from "@/components/storefront/CartBadge";
 import Footer from "@/components/storefront/Footer";
 import SearchBar from "@/components/storefront/SearchBar";
+import ThemeToggle from "@/components/ThemeToggle";
 import { CartProvider } from "@/lib/cart-context";
 
 const DESKTOP_NAV = [
   { href: "/", label: "Home" },
   { href: "/products", label: terms.catalog },
-  { href: "/categories", label: "Categories" },
 ];
 
 export default async function StorefrontLayout({
@@ -45,6 +45,7 @@ export default async function StorefrontLayout({
             <SearchBar className="hidden max-w-md flex-1 md:block" />
 
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <Link
                 href="/wishlist"
                 aria-label="Wishlist"

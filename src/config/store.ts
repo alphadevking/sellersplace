@@ -52,6 +52,10 @@ const TERMS = {
     cartLabel: "Cart",
     heroTagline: "Shop the latest at",
     heroCta: "Shop now",
+    // Shopper-facing word for category browsing — "Categories" is database
+    // language; "Explore" invites.
+    explore: "Explore",
+    exploreHeading: "Shop by category",
   },
   services: {
     catalog: "Services",
@@ -63,6 +67,8 @@ const TERMS = {
     cartLabel: "Bookings",
     heroTagline: "Book trusted services at",
     heroCta: "Explore services",
+    explore: "Explore",
+    exploreHeading: "Browse by need",
   },
   hybrid: {
     catalog: "Catalog",
@@ -74,6 +80,8 @@ const TERMS = {
     cartLabel: "Cart",
     heroTagline: "Products & services from",
     heroCta: "Explore",
+    explore: "Explore",
+    exploreHeading: "Explore the range",
   },
 } as const;
 

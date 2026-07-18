@@ -41,10 +41,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       style={{ "--brand": storeConfig.primaryColor } as React.CSSProperties}
     >
       <body className="min-h-full flex flex-col">
+        {/* Apply the stored theme before paint so dark mode doesn't flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var t=localStorage.getItem("sellersplace:theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}',
+          }}
+        />
         {children}
         <ServiceWorkerRegister />
       </body>

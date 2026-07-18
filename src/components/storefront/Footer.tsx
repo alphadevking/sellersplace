@@ -4,7 +4,6 @@ import { ShieldCheck, Truck, RotateCcw } from "lucide-react";
 
 const SHOP_LINKS = [
   { href: "/products", label: terms.allCatalog },
-  { href: "/categories", label: "Categories" },
   { href: "/wishlist", label: "Wishlist" },
   { href: "/cart", label: "Cart" },
 ];

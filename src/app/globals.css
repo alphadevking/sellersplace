@@ -12,6 +12,21 @@
   /* Derived shades so any brand color still gets sensible hover/press states. */
   --brand-hover: color-mix(in srgb, var(--brand) 88%, black);
   --brand-soft: color-mix(in srgb, var(--brand) 10%, white);
+  color-scheme: light;
+}
+
+/* Dark theme — toggled by data-theme="dark" on <html> (see ThemeToggle).
+   Warm dark neutrals from the SellersPlace design system; the brand hue is
+   unchanged but its derivations flip toward the dark canvas. */
+[data-theme="dark"] {
+  --background: #121210;
+  --foreground: #f2f1ec;
+  --surface: #1c1c19;
+  --border: #2a2a26;
+  --muted: #96948c;
+  --brand-hover: color-mix(in srgb, var(--brand) 80%, white);
+  --brand-soft: color-mix(in srgb, var(--brand) 18%, #121210);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -88,4 +103,43 @@ body {
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Dual-thumb price range slider (Jumia-style price filter).
+   Both range inputs overlap; only the thumbs receive pointer events. */
+.dual-range {
+  position: relative;
+  height: 20px;
+}
+.dual-range input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.dual-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--brand);
+  border: 2px solid var(--background);
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+}
+.dual-range input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--brand);
+  border: 2px solid var(--background);
+  cursor: pointer;
 }

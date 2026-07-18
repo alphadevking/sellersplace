@@ -222,6 +222,17 @@ model Inquiry {
   user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
+/// Aggregated log of storefront searches — powers "trending searches" and
+/// future ranking signals. One row per normalized term.
+model SearchQuery {
+  id             String   @id @default(cuid())
+  /// Lowercased, whitespace-collapsed search term.
+  term           String   @unique
+  count          Int      @default(1)
+  lastSearchedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -8,17 +9,19 @@ import { prisma } from "@/lib/prisma";
  *   Stage 1  PHRASE   — the whole query matches name/brand/description/category.
  *   Stage 2  TOKENS   — any individual word of the query matches (recall boost,
  *                       catches "red leather bag" when only "leather bag" exists).
- *   Stage 3  FALLBACK — nothing matched: recommend best sellers (real order
+ *   Stage 3  FUZZY    — pg_trgm word similarity catches typos ("perfuem" →
+ *                       "Perfume"), ranked by similarity, GIN-indexed.
+ *   Stage 4  FALLBACK — nothing matched: recommend best sellers (real order
  *                       volume), topped up with newest arrivals. Search never
  *                       returns an empty shelf.
  *
  * Each stage only runs when the previous one found nothing, so the common case
- * stays a single query. To upgrade later, insert stages between 2 and 3:
- *   - pg_trgm `similarity()` for typo tolerance (CREATE EXTENSION pg_trgm),
- *   - Postgres full-text search (tsvector) for stemming/ranking,
- *   - pgvector embeddings for semantic "meaning" matches,
- * and swap Stage 3's popularity rank for per-user signals (view/cart/purchase
- * history) when personalization data exists.
+ * stays a single query. Future upgrades slot between 3 and 4: Postgres
+ * full-text (tsvector) for stemming, pgvector embeddings for semantic matches;
+ * and Stage 4's popularity rank can become per-user when behaviour data exists.
+ *
+ * Deliberate searches are logged to SearchQuery (see recordSearch) — that
+ * powers trending suggestions and, later, search-driven ranking.
  */
 
 const CARD_SELECT = {
@@ -50,13 +53,53 @@ function fieldMatches(term: string) {
 }
 
 /** Extra catalog constraints applied to every stage (category browsing etc.). */
-type CatalogFilter = { categorySlug?: string };
+export type CatalogFilter = {
+  categorySlug?: string;
+  /** Multi-select, Jumia-style: a product matches when its brand is any of these. */
+  brands?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+};
 
 function baseWhere(filter: CatalogFilter) {
+  const price = {
+    ...(filter.minPrice != null && filter.minPrice > 0 ? { gte: filter.minPrice } : {}),
+    ...(filter.maxPrice != null && filter.maxPrice > 0 ? { lte: filter.maxPrice } : {}),
+  };
   return {
     isActive: true,
     ...(filter.categorySlug ? { category: { is: { slug: filter.categorySlug } } } : {}),
+    ...(filter.brands?.length ? { brand: { in: filter.brands } } : {}),
+    ...(Object.keys(price).length ? { price } : {}),
   };
+}
+
+/** Real catalog price range (category-scoped) — bounds the price slider. */
+export async function getPriceBounds(categorySlug?: string) {
+  const agg = await prisma.product.aggregate({
+    where: baseWhere({ categorySlug }),
+    _min: { price: true },
+    _max: { price: true },
+  });
+  return {
+    min: agg._min.price ? Math.floor(Number(agg._min.price)) : 0,
+    max: agg._max.price ? Math.ceil(Number(agg._max.price)) : 0,
+  };
+}
+
+/** Distinct brand names for the filter dropdown, narrowed by category when given. */
+export async function getCatalogBrands(categorySlug?: string) {
+  const rows = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      brand: { not: null },
+      ...(categorySlug ? { category: { is: { slug: categorySlug } } } : {}),
+    },
+    select: { brand: true },
+    distinct: ["brand"],
+    orderBy: { brand: "asc" },
+  });
+  return rows.map((r) => r.brand).filter((b): b is string => !!b);
 }
 
 function phraseWhere(query: string, filter: CatalogFilter = {}) {
@@ -168,6 +211,48 @@ export type SearchOutcome = {
   fallback: boolean;
 };
 
+/**
+ * Stage 3: pg_trgm typo tolerance. Finds products whose name/brand contains a
+ * word similar to the query ("perfuem" ≈ "Perfume"), then applies the normal
+ * catalog filters and preserves the similarity ranking.
+ */
+async function fuzzyStage(query: string, filter: CatalogFilter, limit: number) {
+  let ranked: { id: string }[];
+  try {
+    ranked = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT id
+      FROM "Product"
+      WHERE "isActive"
+        AND GREATEST(
+          word_similarity(${query}, name),
+          word_similarity(${query}, coalesce(brand, ''))
+        ) > 0.4
+      ORDER BY GREATEST(
+        word_similarity(${query}, name),
+        word_similarity(${query}, coalesce(brand, ''))
+      ) DESC
+      LIMIT 40
+    `);
+  } catch (err) {
+    // pg_trgm missing (e.g. fresh local DB without the migration) — degrade
+    // gracefully to the fallback stage rather than erroring the search.
+    console.error("Fuzzy search unavailable:", err);
+    return null;
+  }
+  if (ranked.length === 0) return null;
+
+  const ids = ranked.map((r) => r.id);
+  const products = await prisma.product.findMany({
+    where: { ...baseWhere(filter), id: { in: ids } },
+    select: CARD_SELECT,
+  });
+  if (products.length === 0) return null;
+
+  const byRank = new Map(ids.map((id, i) => [id, i]));
+  products.sort((a, b) => (byRank.get(a.id) ?? 0) - (byRank.get(b.id) ?? 0));
+  return { products: products.slice(0, limit), total: products.length };
+}
+
 export async function searchWithFallback(
   query: string,
   limit = 8,
@@ -184,8 +269,37 @@ export async function searchWithFallback(
     if (tokenStage.total > 0) return { ...tokenStage, fallback: false };
   }
 
+  const fuzzy = await fuzzyStage(query, opts, limit);
+  if (fuzzy) return { ...fuzzy, fallback: false };
+
   const suggestions = await getPopularProducts(limit);
   return { products: suggestions, total: 0, fallback: true };
+}
+
+/** Log a deliberate search (results-page visit) — one row per normalized term. */
+export async function recordSearch(rawTerm: string) {
+  const term = rawTerm.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 80);
+  if (term.length < 2) return;
+  try {
+    await prisma.searchQuery.upsert({
+      where: { term },
+      update: { count: { increment: 1 }, lastSearchedAt: new Date() },
+      create: { term },
+    });
+  } catch (err) {
+    console.error("Failed to record search:", err); // tracking never breaks search
+  }
+}
+
+/** Most-searched terms of the last 30 days, for the search bar's trending list. */
+export async function getTrendingSearches(limit = 6) {
+  const rows = await prisma.searchQuery.findMany({
+    where: { lastSearchedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+    orderBy: [{ count: "desc" }, { lastSearchedAt: "desc" }],
+    take: limit,
+    select: { term: true },
+  });
+  return rows.map((r) => r.term);
 }
 
 /**
