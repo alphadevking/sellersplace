@@ -49,21 +49,48 @@ function fieldMatches(term: string) {
   ];
 }
 
-function phraseWhere(query: string) {
-  return { isActive: true, OR: fieldMatches(query) };
+/** Extra catalog constraints applied to every stage (category browsing etc.). */
+type CatalogFilter = { categorySlug?: string };
+
+function baseWhere(filter: CatalogFilter) {
+  return {
+    isActive: true,
+    ...(filter.categorySlug ? { category: { is: { slug: filter.categorySlug } } } : {}),
+  };
 }
 
-function tokenWhere(query: string) {
+function phraseWhere(query: string, filter: CatalogFilter = {}) {
+  return { ...baseWhere(filter), OR: fieldMatches(query) };
+}
+
+function tokenWhere(query: string, filter: CatalogFilter = {}) {
   const tokens = query.split(/\s+/).filter((t) => t.length >= 2);
   if (tokens.length <= 1) return null; // identical to the phrase stage
-  return { isActive: true, OR: tokens.flatMap(fieldMatches) };
+  return { ...baseWhere(filter), OR: tokens.flatMap(fieldMatches) };
 }
 
-async function findStage(where: NonNullable<ReturnType<typeof phraseWhere>>, limit: number) {
+export type CatalogSort = "newest" | "price-asc" | "price-desc" | "rating";
+
+const SORT_ORDER = {
+  newest: { createdAt: "desc" },
+  "price-asc": { price: "asc" },
+  "price-desc": { price: "desc" },
+  rating: { ratingAvg: { sort: "desc", nulls: "last" } },
+} as const satisfies Record<CatalogSort, object>;
+
+export function parseCatalogSort(value?: string): CatalogSort {
+  return value && value in SORT_ORDER ? (value as CatalogSort) : "newest";
+}
+
+async function findStage(
+  where: ReturnType<typeof phraseWhere>,
+  limit: number,
+  sort: CatalogSort = "newest"
+) {
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: SORT_ORDER[sort],
       take: limit,
       select: CARD_SELECT,
     }),
@@ -141,16 +168,40 @@ export type SearchOutcome = {
   fallback: boolean;
 };
 
-export async function searchWithFallback(query: string, limit = 8): Promise<SearchOutcome> {
-  const phrase = await findStage(phraseWhere(query), limit);
+export async function searchWithFallback(
+  query: string,
+  limit = 8,
+  opts: CatalogFilter & { sort?: CatalogSort } = {}
+): Promise<SearchOutcome> {
+  const sort = opts.sort ?? "newest";
+
+  const phrase = await findStage(phraseWhere(query, opts), limit, sort);
   if (phrase.total > 0) return { ...phrase, fallback: false };
 
-  const tokens = tokenWhere(query);
+  const tokens = tokenWhere(query, opts);
   if (tokens) {
-    const tokenStage = await findStage(tokens, limit);
+    const tokenStage = await findStage(tokens, limit, sort);
     if (tokenStage.total > 0) return { ...tokenStage, fallback: false };
   }
 
   const suggestions = await getPopularProducts(limit);
   return { products: suggestions, total: 0, fallback: true };
+}
+
+/**
+ * Filtered/sorted catalog listing (no search query) — the browse counterpart
+ * to searchWithFallback, sharing the same card shape.
+ */
+export async function browseCatalog(opts: CatalogFilter & { sort?: CatalogSort; limit?: number }) {
+  const where = baseWhere(opts);
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: SORT_ORDER[opts.sort ?? "newest"],
+      take: opts.limit ?? 60,
+      select: CARD_SELECT,
+    }),
+    prisma.product.count({ where }),
+  ]);
+  return { products, total, fallback: false as const };
 }

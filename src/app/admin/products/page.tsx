@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
@@ -7,11 +8,35 @@ import { toggleProductActive } from "@/app/actions/admin";
 
 export const metadata = { title: "Products" };
 
-export default async function AdminProductsPage() {
-  const products = await prisma.product.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { category: true },
-  });
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; category?: string }>;
+}) {
+  const { q, category } = await searchParams;
+  const query = q?.trim() || undefined;
+
+  const where: Prisma.ProductWhereInput = {
+    ...(query
+      ? {
+          OR: [
+            { name: { contains: query, mode: "insensitive" } },
+            { sku: { contains: query, mode: "insensitive" } },
+            { brand: { contains: query, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+    ...(category ? { category: { is: { slug: category } } } : {}),
+  };
+
+  const [products, categories] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: { category: true },
+    }),
+    prisma.category.findMany({ orderBy: { name: "asc" } }),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -22,9 +47,37 @@ export default async function AdminProductsPage() {
         </Link>
       </div>
 
+      <form method="GET" action="/admin/products" className="flex flex-wrap items-center gap-2">
+        <label
+          className="flex min-w-48 flex-1 items-center gap-2 rounded-xl bg-surface px-3.5 py-2 text-sm text-muted sm:max-w-xs"
+        >
+          <Search className="h-4 w-4 shrink-0" />
+          <input
+            type="search"
+            name="q"
+            defaultValue={query}
+            placeholder="Name, SKU, or brand…"
+            className="w-full bg-transparent text-foreground outline-none placeholder:text-muted"
+          />
+        </label>
+        <select name="category" defaultValue={category ?? ""} className="input-field w-auto py-2 text-sm">
+          <option value="">All categories</option>
+          {categories.map((cat) => (
+            <option key={cat.slug} value={cat.slug}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="btn-ghost px-3 py-2 text-sm">
+          Filter
+        </button>
+      </form>
+
       {products.length === 0 ? (
         <p className="card-surface p-4 text-sm text-muted">
-          No products yet — add your first one.
+          {query || category
+            ? "No products match this filter."
+            : "No products yet — add your first one."}
         </p>
       ) : (
         <div className="flex flex-col gap-2">

@@ -6,20 +6,38 @@ import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/StatusB
 
 export const metadata = { title: "Dashboard" };
 
+// Server component runs per-request, so "now" is stable for the render.
+function daysAgo(days: number) {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
 export default async function AdminDashboardPage() {
+  const thirtyDaysAgo = daysAgo(30);
+
   const [
     revenue,
+    revenue30d,
     orderCount,
     openOrderCount,
     customerCount,
     productCount,
     newInquiryCount,
+    inquiryByStatus,
+    topSellerRows,
     lowStock,
     recentOrders,
   ] = await Promise.all([
+      // Money actually received (deposits included) — sum of amountPaid.
       prisma.order.aggregate({
-        _sum: { total: true },
-        where: { paymentStatus: "PAID" },
+        _sum: { amountPaid: true },
+        where: { paymentStatus: { in: ["PAID", "PARTIALLY_PAID"] } },
+      }),
+      prisma.order.aggregate({
+        _sum: { amountPaid: true },
+        where: {
+          paymentStatus: { in: ["PAID", "PARTIALLY_PAID"] },
+          createdAt: { gte: thirtyDaysAgo },
+        },
       }),
       prisma.order.count(),
       prisma.order.count({
@@ -28,6 +46,17 @@ export default async function AdminDashboardPage() {
       prisma.user.count({ where: { role: "CUSTOMER" } }),
       prisma.product.count({ where: { isActive: true } }),
       prisma.inquiry.count({ where: { status: "NEW" } }),
+      prisma.inquiry.groupBy({ by: ["status"], _count: true }),
+      prisma.orderItem.groupBy({
+        by: ["productId"],
+        where: {
+          productId: { not: null },
+          order: { paymentStatus: { in: ["PAID", "PARTIALLY_PAID"] } },
+        },
+        _sum: { quantity: true, unitPrice: true },
+        orderBy: { _sum: { quantity: "desc" } },
+        take: 5,
+      }),
       prisma.product.findMany({
         where: { isActive: true, stock: { lte: 5 } },
         orderBy: { stock: "asc" },
@@ -40,6 +69,13 @@ export default async function AdminDashboardPage() {
       }),
     ]);
 
+  const topSellerIds = topSellerRows
+    .map((r) => r.productId)
+    .filter((id): id is string => id !== null);
+  const topSellerProducts = topSellerIds.length
+    ? await prisma.product.findMany({ where: { id: { in: topSellerIds } } })
+    : [];
+
   const stats: Array<{
     label: string;
     value: string;
@@ -48,8 +84,9 @@ export default async function AdminDashboardPage() {
     href?: string;
   }> = [
     {
-      label: "Revenue (paid)",
-      value: formatCurrency(Number(revenue._sum.total ?? 0)),
+      label: "Revenue (received)",
+      value: formatCurrency(Number(revenue._sum.amountPaid ?? 0)),
+      hint: `${formatCurrency(Number(revenue30d._sum.amountPaid ?? 0))} last 30 days`,
       icon: Banknote,
     },
     {
@@ -103,6 +140,70 @@ export default async function AdminDashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section>
+          <h2 className="mb-3 text-sm font-semibold">Top sellers (paid orders)</h2>
+          {topSellerRows.length === 0 ? (
+            <p className="card-surface p-4 text-sm text-muted">
+              No paid sales yet — top products will rank here.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {topSellerRows.map((row, index) => {
+                const product = topSellerProducts.find((p) => p.id === row.productId);
+                if (!product) return null;
+                return (
+                  <Link
+                    key={product.id}
+                    href={`/admin/products/${product.id}`}
+                    className="card flex items-center justify-between gap-3 p-3.5 transition-colors hover:bg-surface"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+                        style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+                      >
+                        {index + 1}
+                      </span>
+                      <span className="truncate text-sm font-medium">{product.name}</span>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted">
+                      {row._sum.quantity ?? 0} sold
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-sm font-semibold">Leads pipeline</h2>
+          <div className="card flex flex-col gap-2 p-4">
+            {(["NEW", "RESPONDED", "CLOSED"] as const).map((status) => {
+              const count = inquiryByStatus.find((r) => r.status === status)?._count ?? 0;
+              return (
+                <Link
+                  key={status}
+                  href={`/admin/inquiries?status=${status}`}
+                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-surface"
+                >
+                  <span className="capitalize text-foreground/80">{status.toLowerCase()}</span>
+                  <span className="font-semibold">{count}</span>
+                </Link>
+              );
+            })}
+            <Link
+              href="/admin/inquiries"
+              className="mt-1 border-t pt-2 text-xs text-muted hover:text-foreground"
+              style={{ borderColor: "var(--border)" }}
+            >
+              View all inquiries →
+            </Link>
+          </div>
+        </section>
       </div>
 
       <section>
