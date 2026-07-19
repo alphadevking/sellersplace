@@ -20,6 +20,11 @@ export const storeConfig = {
    */
   whatsappNumber: process.env.NEXT_PUBLIC_STORE_WHATSAPP || "",
   phone: process.env.NEXT_PUBLIC_STORE_PHONE || "",
+  /**
+   * Fulfilment wordmark on product cards (the "JUMIA EXPRESS" pattern):
+   * shown on directly-buyable physical products when set, e.g. "SELLERSPLACE EXPRESS".
+   */
+  expressBadge: process.env.NEXT_PUBLIC_STORE_EXPRESS_BADGE || "",
 } as const;
 
 /** wa.me deep link with a prefilled message; empty string when WhatsApp isn't configured. */

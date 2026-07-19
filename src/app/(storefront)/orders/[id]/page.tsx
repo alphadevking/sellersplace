@@ -2,8 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
-import { Check } from "lucide-react";
+import { Check, ExternalLink, Truck } from "lucide-react";
 import PayBalanceButton from "@/components/storefront/PayBalanceButton";
+import { confirmOrderReceived } from "@/app/actions/orders";
 
 const TIMELINE_STEPS = ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 
@@ -140,6 +141,42 @@ export default async function OrderDetailPage({
           </span>
           <span className="text-muted">{order.address.phone}</span>
         </div>
+      )}
+
+      {(order.carrier || order.trackingNumber) && (
+        <div className="card-surface flex flex-col gap-1.5 p-4 text-sm">
+          <span className="flex items-center gap-2 font-medium">
+            <Truck className="h-4 w-4" style={{ color: "var(--brand)" }} /> Shipment
+          </span>
+          <span className="text-muted">
+            {order.carrier}
+            {order.carrier && order.trackingNumber ? " · " : ""}
+            {order.trackingNumber}
+          </span>
+          {order.trackingUrl && (
+            <a
+              href={order.trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-fit items-center gap-1 text-xs font-medium"
+              style={{ color: "var(--brand)" }}
+            >
+              Track this shipment <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+      )}
+
+      {order.status === "SHIPPED" && (
+        <form action={confirmOrderReceived} className="flex flex-col gap-1.5">
+          <input type="hidden" name="orderId" value={order.id} />
+          <button type="submit" className="btn-primary">
+            <Check className="h-4 w-4" /> Confirm I received this order
+          </button>
+          <p className="text-center text-xs text-muted">
+            Got your delivery? Confirming completes the order.
+          </p>
+        </form>
       )}
 
       {(order.serviceDate || order.customerNote) && (

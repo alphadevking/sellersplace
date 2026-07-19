@@ -37,6 +37,7 @@ const CARD_SELECT = {
   priceType: true,
   ratingAvg: true,
   ratingCount: true,
+  stock: true,
   category: { select: { slug: true, name: true } },
 } as const;
 

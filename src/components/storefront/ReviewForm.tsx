@@ -10,13 +10,18 @@ const INITIAL: ReviewFormState = { ok: false };
 export default function ReviewForm({
   productId,
   productSlug,
+  initialRating = 0,
+  initialBody = "",
 }: {
   productId: string;
   productSlug: string;
+  initialRating?: number;
+  initialBody?: string;
 }) {
   const [state, formAction, pending] = useActionState(submitReview, INITIAL);
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(initialRating);
   const [hovered, setHovered] = useState(0);
+  const editing = initialRating > 0;
 
   if (state.ok) {
     return (
@@ -28,7 +33,9 @@ export default function ReviewForm({
 
   return (
     <form action={formAction} className="card-surface flex flex-col gap-3 p-4">
-      <span className="text-sm font-semibold">Write a review</span>
+      <span className="text-sm font-semibold">
+        {editing ? "Update your review" : "Write a review"}
+      </span>
       <input type="hidden" name="productId" value={productId} />
       <input type="hidden" name="productSlug" value={productSlug} />
       <input type="hidden" name="rating" value={rating} />
@@ -57,6 +64,7 @@ export default function ReviewForm({
         name="body"
         rows={3}
         maxLength={2000}
+        defaultValue={initialBody}
         placeholder="What did you think? (optional)"
         className="input-field"
       />
@@ -68,7 +76,7 @@ export default function ReviewForm({
         disabled={pending || rating === 0}
         className="btn-primary self-start"
       >
-        {pending ? "Submitting…" : "Submit review"}
+        {pending ? "Submitting…" : editing ? "Update review" : "Submit review"}
       </button>
     </form>
   );

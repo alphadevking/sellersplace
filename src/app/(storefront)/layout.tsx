@@ -24,7 +24,10 @@ export default async function StorefrontLayout({
   return (
     <CartProvider>
       <div className="flex min-h-screen flex-col bg-background">
-        <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur-md" style={{ borderColor: "var(--border)" }}>
+        <header
+          className="sticky top-0 z-40 border-b bg-background/85 shadow-sm shadow-black/5 backdrop-blur-xl [padding-top:env(safe-area-inset-top)]"
+          style={{ borderColor: "var(--border)" }}
+        >
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3.5 md:gap-8">
             <Link href="/" className="text-lg font-semibold tracking-tight">
               {storeConfig.name}

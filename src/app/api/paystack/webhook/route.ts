@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isValidPaystackSignature } from "@/lib/paystack";
 import { applySuccessfulCharge, balanceDue } from "@/lib/payments";
+import { adjustOrderStock } from "@/lib/orders";
 import { sendOrderStatusPush } from "@/lib/push";
 
 export async function POST(req: NextRequest) {
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
           statusHistory: { create: { status: "CONFIRMED", note: "Payment confirmed" } },
         },
       });
+      await adjustOrderStock(legacy.id, "decrement");
       await sendOrderStatusPush(legacy.userId, {
         title: "Payment confirmed",
         body: `Your order ${legacy.orderNumber} has been confirmed and is being processed.`,

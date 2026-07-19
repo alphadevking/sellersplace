@@ -107,6 +107,38 @@ export async function createInvoice(formData: FormData) {
   redirect(`/admin/orders/${order.id}`);
 }
 
+/** Shipment tracking details, set at (or before) dispatch. */
+export async function setOrderTracking(formData: FormData) {
+  await requireAdmin();
+
+  const orderId = formData.get("orderId") as string;
+  if (!orderId) throw new Error("Missing order id");
+
+  const carrier = (formData.get("carrier") as string)?.trim() || null;
+  const trackingNumber = (formData.get("trackingNumber") as string)?.trim() || null;
+  const trackingUrlRaw = (formData.get("trackingUrl") as string)?.trim();
+  let trackingUrl: string | null = null;
+  if (trackingUrlRaw) {
+    try {
+      const parsed = new URL(trackingUrlRaw);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error("bad protocol");
+      }
+      trackingUrl = parsed.toString();
+    } catch {
+      throw new Error("Tracking link must be a valid http(s) URL");
+    }
+  }
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { carrier, trackingNumber, trackingUrl },
+  });
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath(`/orders/${orderId}`);
+}
+
 export async function setInquiryStatus(formData: FormData) {
   await requireAdmin();
 

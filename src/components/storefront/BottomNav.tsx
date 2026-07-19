@@ -19,7 +19,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur-lg [padding-bottom:env(safe-area-inset-bottom)] md:hidden"
       style={{ borderColor: "var(--border)" }}
     >
       <div className="mx-auto flex max-w-3xl items-center justify-between px-2 py-2">

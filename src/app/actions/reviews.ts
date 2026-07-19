@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPurchasedProduct } from "@/lib/reviews";
 
 export type ReviewFormState = { ok: boolean; error?: string };
 
@@ -30,18 +31,7 @@ export async function submitReview(
     return { ok: false, error: "Review is too long." };
   }
 
-  const purchased = await prisma.orderItem.findFirst({
-    where: {
-      productId,
-      order: {
-        userId: session.user.id,
-        OR: [
-          { paymentStatus: { in: ["PAID", "PARTIALLY_PAID"] } },
-          { status: "DELIVERED" },
-        ],
-      },
-    },
-  });
+  const purchased = await hasPurchasedProduct(session.user.id, productId);
   if (!purchased) {
     return { ok: false, error: "Only verified buyers can review this item." };
   }

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { getProductBySlug } from "@/lib/products";
 import { getRelatedProducts } from "@/lib/recommendations";
 import { getWishlistProductIds } from "@/lib/wishlist";
+import { getUserReview, hasPurchasedProduct } from "@/lib/reviews";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import ProductCard from "@/components/storefront/ProductCard";
 import ProductPurchasePanel from "@/components/storefront/ProductPurchasePanel";
@@ -20,9 +21,11 @@ export default async function ProductDetailPage({
   if (!product || !product.isActive) notFound();
 
   const session = await auth();
-  const [wishlistIds, related] = await Promise.all([
+  const [wishlistIds, related, canReview, ownReview] = await Promise.all([
     getWishlistProductIds(session?.user?.id),
     getRelatedProducts(product.id, 4),
+    session?.user ? hasPurchasedProduct(session.user.id, product.id) : false,
+    session?.user ? getUserReview(session.user.id, product.id) : null,
   ]);
 
   const image = product.images?.[0];
@@ -175,11 +178,22 @@ export default async function ProductDetailPage({
             )}
           </div>
         ))}
-        {session?.user ? (
-          <ReviewForm productId={product.id} productSlug={product.slug} />
-        ) : (
+        {!session?.user ? (
           <p className="card-surface p-4 text-sm text-muted">
             Bought this? Sign in to leave a verified review.
+          </p>
+        ) : canReview ? (
+          <ReviewForm
+            productId={product.id}
+            productSlug={product.slug}
+            initialRating={ownReview?.rating ?? 0}
+            initialBody={ownReview?.body ?? ""}
+          />
+        ) : (
+          <p className="card-surface p-4 text-sm text-muted">
+            Reviews come from verified buyers — order this
+            {product.offeringType === "SERVICE" ? " service" : " item"} and you&apos;ll be
+            able to share your experience here.
           </p>
         )}
       </div>

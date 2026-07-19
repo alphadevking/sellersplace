@@ -86,6 +86,10 @@ model Product {
   wishlistItems  WishlistItem[]
   inquiries      Inquiry[]
   reviews        Review[]
+
+  // Trigram indexes for the typo-tolerant fuzzy search stage (pg_trgm).
+  @@index([name(ops: raw("gin_trgm_ops"))], map: "Product_name_trgm_idx", type: Gin)
+  @@index([brand(ops: raw("gin_trgm_ops"))], map: "Product_brand_trgm_idx", type: Gin)
 }
 
 /// Verified-buyer product review; aggregates are cached on Product.
@@ -152,6 +156,14 @@ model Order {
   status        OrderStatus        @default(PENDING)
   paymentStatus PaymentStatus      @default(PENDING)
   paystackRef   String?            @unique
+  /// True once this order's confirmation decremented inventory — guards
+  /// against double-decrementing (deposit then balance) and enables restore
+  /// on cancellation.
+  stockAdjusted Boolean            @default(false)
+  /// Shipment tracking, set by admin at dispatch.
+  carrier        String?
+  trackingNumber String?
+  trackingUrl    String?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   address       Address?           @relation(fields: [addressId], references: [id])

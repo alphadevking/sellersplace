@@ -2,6 +2,7 @@ import crypto from "crypto";
 import type { Order, PaymentKind, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { initializePaystackTransaction } from "@/lib/paystack";
+import { adjustOrderStock } from "@/lib/orders";
 
 /** Naira balance still owed on an order. */
 export function balanceDue(order: Pick<Order, "total" | "amountPaid">): number {
@@ -59,6 +60,9 @@ export async function applySuccessfulCharge(reference: string) {
 
   const amountPaid = Number(payment.order.amountPaid) + Number(payment.amount);
   const fullyPaid = amountPaid >= Number(payment.order.total) - 0.01;
+
+  // Money has landed — commit inventory (idempotent via the stockAdjusted flag).
+  await adjustOrderStock(payment.orderId, "decrement");
 
   return prisma.order.update({
     where: { id: payment.orderId },

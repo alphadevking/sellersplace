@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
-import { setOrderStatus } from "@/app/actions/admin";
+import { setOrderStatus, setOrderTracking } from "@/app/actions/admin";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
 
 export const metadata = { title: "Order" };
@@ -185,6 +185,47 @@ export default async function AdminOrderDetailPage({
               </button>
               <p className="text-[11px] text-muted">
                 The customer gets a push notification for each status change.
+              </p>
+            </form>
+          </section>
+
+          <section className="card flex flex-col gap-3 p-4">
+            <h2 className="text-sm font-semibold">Shipment tracking</h2>
+            <form action={setOrderTracking} className="flex flex-col gap-3">
+              <input type="hidden" name="orderId" value={order.id} />
+              <label className="field-label">
+                Carrier
+                <input
+                  name="carrier"
+                  defaultValue={order.carrier ?? ""}
+                  placeholder="e.g. GIG Logistics"
+                  className="input-field"
+                />
+              </label>
+              <label className="field-label">
+                Tracking number
+                <input
+                  name="trackingNumber"
+                  defaultValue={order.trackingNumber ?? ""}
+                  placeholder="e.g. GIGL-2049-XYZ"
+                  className="input-field"
+                />
+              </label>
+              <label className="field-label">
+                Tracking link (optional)
+                <input
+                  name="trackingUrl"
+                  type="url"
+                  defaultValue={order.trackingUrl ?? ""}
+                  placeholder="https://…"
+                  className="input-field"
+                />
+              </label>
+              <button type="submit" className="btn-outline">
+                Save tracking
+              </button>
+              <p className="text-[11px] text-muted">
+                Shown to the customer on their order page once saved.
               </p>
             </form>
           </section>
