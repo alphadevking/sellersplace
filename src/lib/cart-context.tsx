@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -29,19 +30,30 @@ function sameLine(line: CartLine, productId: string, variantId?: string) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [lines, setLines] = useState<CartLine[]>(() => {
-    if (typeof window === "undefined") return [];
+  // Starts empty on both server and the client's first render so hydration
+  // matches; the real cart (client-only, in localStorage) loads right after.
+  const [lines, setLines] = useState<CartLine[]>([]);
+
+  useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       // Pre-variant carts parse fine: variantId is simply undefined.
-      return raw ? JSON.parse(raw) : [];
+      if (raw) setLines(JSON.parse(raw));
     } catch {
-      return [];
+      // Ignore malformed storage; cart stays empty.
     }
-  });
+  }, []);
 
-  // Persist on every change.
+  // Persist on every change, but skip the mount's effect run — both this and
+  // the load effect above fire in the same commit, so persisting there would
+  // write the still-stale `lines` closure ([]) over the cart just read above,
+  // before the load's setLines has re-rendered anything.
+  const skipNextPersist = useRef(true);
   useEffect(() => {
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
   }, [lines]);
 

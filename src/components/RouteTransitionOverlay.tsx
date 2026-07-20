@@ -10,19 +10,36 @@ const SHOW_DELAY_MS = 150;
 // same URL, or an error boundary swallows the transition), don't get stuck.
 const SAFETY_TIMEOUT_MS = 8000;
 
-/** Fires `onNavigate` once the URL Next.js has actually rendered changes. */
-function NavigationWatcher({ onNavigate }: { onNavigate: () => void }) {
+/**
+ * Fires `onNavigate` once the URL Next.js has actually rendered changes.
+ *
+ * `prevKeyRef` is owned by the caller rather than a local `useRef` here: in
+ * dev, `useSearchParams()` suspends on every navigation (Next's dev-only
+ * Suspense DevTools instrumentation wraps it in `React.use()` of a fresh
+ * per-navigation promise). That means this component gets discarded and
+ * remounted by the `Suspense` boundary mid-navigation — a local ref would
+ * re-initialize to the already-current key on remount, so the "did the key
+ * change" check below would always be false and `onNavigate` would never
+ * fire, leaving the overlay armed with nothing to clear it. A ref held by
+ * the never-unmounting parent survives that remount.
+ */
+function NavigationWatcher({
+  prevKeyRef,
+  onNavigate,
+}: {
+  prevKeyRef: { current: string | null };
+  onNavigate: () => void;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const key = `${pathname}?${searchParams.toString()}`;
-  const prevKey = useRef(key);
 
   useEffect(() => {
-    if (prevKey.current !== key) {
-      prevKey.current = key;
+    if (prevKeyRef.current !== null && prevKeyRef.current !== key) {
       onNavigate();
     }
-  }, [key, onNavigate]);
+    prevKeyRef.current = key;
+  }, [key, onNavigate, prevKeyRef]);
 
   return null;
 }
@@ -46,6 +63,7 @@ function NavigationWatcher({ onNavigate }: { onNavigate: () => void }) {
 export default function RouteTransitionOverlay() {
   const [pending, setPending] = useState(false);
   const [visible, setVisible] = useState(false);
+  const prevKeyRef = useRef<string | null>(null);
 
   function start() {
     // Next's router calls history.pushState/replaceState from inside a
@@ -143,7 +161,7 @@ export default function RouteTransitionOverlay() {
   return (
     <>
       <Suspense fallback={null}>
-        <NavigationWatcher onNavigate={stop} />
+        <NavigationWatcher prevKeyRef={prevKeyRef} onNavigate={stop} />
       </Suspense>
       <LoadingOverlay show={visible} />
     </>
