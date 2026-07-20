@@ -15,10 +15,18 @@ export default function ReorderButton({ lines }: { lines: ReorderLine[] }) {
 
   function handleReorder() {
     setPending(true);
-    for (const line of lines) {
-      addItem(line.productId, line.quantity, line.variantId ?? undefined);
+    try {
+      for (const line of lines) {
+        addItem(line.productId, line.quantity, line.variantId ?? undefined);
+      }
+      router.push("/cart");
+    } finally {
+      // addItem/push are synchronous — there's no async work to wait on, so
+      // this only needs to cover the current click. Resetting it (rather than
+      // leaving it true forever) avoids a permanently disabled button if the
+      // navigation gets cancelled or the page is restored from bfcache.
+      setPending(false);
     }
-    router.push("/cart");
   }
 
   return (
