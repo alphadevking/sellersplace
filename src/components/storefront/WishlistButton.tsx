@@ -65,7 +65,7 @@ export default function WishlistButton({
       onClick={handleClick}
       aria-pressed={wishlisted}
       aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-      className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm shadow-black/10 backdrop-blur-sm transition-transform hover:scale-105 active:scale-95"
+      className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 shadow-sm shadow-black/20 ring-1 ring-black/5 backdrop-blur-sm transition-transform hover:scale-105 active:scale-95"
     >
       {heart}
     </button>

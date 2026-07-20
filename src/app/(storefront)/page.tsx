@@ -101,7 +101,7 @@ export default async function HomePage() {
             or add products from the admin dashboard once it&apos;s built.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {products.map((product) => (
               <ProductCard
                 key={product.id}

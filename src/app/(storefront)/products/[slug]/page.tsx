@@ -1,5 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronRight, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import { auth } from "@/lib/auth";
+import { storeConfig } from "@/config/store";
+import { formatCurrency } from "@/lib/currency";
 import { getProductBySlug } from "@/lib/products";
 import { getRelatedProducts } from "@/lib/recommendations";
 import { getWishlistProductIds } from "@/lib/wishlist";
@@ -8,6 +12,7 @@ import { emojiForCategorySlug } from "@/lib/category-icons";
 import ProductCard from "@/components/storefront/ProductCard";
 import ProductPurchasePanel from "@/components/storefront/ProductPurchasePanel";
 import ReviewForm from "@/components/storefront/ReviewForm";
+import ShareButtons from "@/components/storefront/ShareButtons";
 import Stars from "@/components/storefront/Stars";
 import WishlistButton from "@/components/storefront/WishlistButton";
 
@@ -23,7 +28,7 @@ export default async function ProductDetailPage({
   const session = await auth();
   const [wishlistIds, related, canReview, ownReview] = await Promise.all([
     getWishlistProductIds(session?.user?.id),
-    getRelatedProducts(product.id, 4),
+    getRelatedProducts(product.id, 6),
     session?.user ? hasPurchasedProduct(session.user.id, product.id) : false,
     session?.user ? getUserReview(session.user.id, product.id) : null,
   ]);
@@ -44,27 +49,58 @@ export default async function ProductDetailPage({
         )
       : [];
 
+  const isService = product.offeringType === "SERVICE";
+  const isQuote = product.priceType === "QUOTE";
+  const isChatOnly = product.purchaseMode === "CONTACT_SELLER" || isQuote;
+
   return (
-    <div className="flex flex-col gap-10">
-    <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-10">
-      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface text-6xl">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={product.name} className="h-full w-full object-cover" />
-        ) : (
-          emojiForCategorySlug(product.category?.slug)
-        )}
-        {discount && (
-          <span
-            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-            style={{ background: "var(--brand)" }}
+    <div className="flex flex-col gap-8">
+    {/* Breadcrumbs */}
+    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted">
+      <Link href="/" className="hover:text-foreground">Home</Link>
+      <ChevronRight className="h-3 w-3" />
+      {product.category && (
+        <>
+          <Link
+            href={`/products?category=${product.category.slug}`}
+            className="hover:text-foreground"
           >
-            -{discount}%
-          </span>
-        )}
+            {product.category.name}
+          </Link>
+          <ChevronRight className="h-3 w-3" />
+        </>
+      )}
+      <span className="truncate text-foreground/70">{product.name}</span>
+    </nav>
+
+    {/* Image (narrow) · Purchase (wide) · Delivery rail */}
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
+      <div className="flex flex-col gap-4 lg:col-span-4">
+        <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-surface text-6xl">
+          {image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image} alt={product.name} className="h-full w-full object-cover" />
+          ) : (
+            emojiForCategorySlug(product.category?.slug)
+          )}
+          {discount && (
+            <span
+              className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+              style={{ background: "var(--brand)" }}
+            >
+              -{discount}%
+            </span>
+          )}
+        </div>
+        <div
+          className="rounded-2xl border p-4"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <ShareButtons title={product.name} />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 lg:col-span-5">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 text-xs text-muted">
             {product.category && <span>{product.category.name}</span>}
@@ -111,36 +147,129 @@ export default async function ProductDetailPage({
           }))}
         />
 
-        {product.description && (
-          <p className="text-sm leading-relaxed text-foreground/80">
-            {product.description}
-          </p>
-        )}
-
-        {specs.length > 0 && (
-          <div>
-            <h2 className="mb-2 text-sm font-semibold">Specifications</h2>
-            <dl
-              className="overflow-hidden rounded-xl border text-sm"
-              style={{ borderColor: "var(--border)" }}
-            >
-              {specs.map(([key, value], index) => (
-                <div
-                  key={key}
-                  className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
-                  style={{ background: index % 2 === 0 ? "var(--surface)" : "transparent" }}
-                >
-                  <dt className="text-muted">{key}</dt>
-                  <dd className="text-right font-medium">{String(value)}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
       </div>
+
+      {/* Delivery & Returns rail */}
+      <aside className="lg:col-span-3">
+        <div
+          className="flex flex-col divide-y rounded-2xl border"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
+              {isService ? "How it works" : "Delivery & Returns"}
+            </h2>
+            {isService ? (
+              <ul className="flex flex-col gap-3 text-sm">
+                <li className="flex gap-2.5">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--brand)" }} />
+                  <span>
+                    <span className="font-medium">Book or request a quote</span>
+                    <span className="block text-xs text-muted">
+                      {isChatOnly ? "Chat with the provider to arrange details." : "Pick a time at checkout."}
+                    </span>
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <Truck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--brand)" }} />
+                  <span>
+                    <span className="font-medium">Service at your location</span>
+                    <span className="block text-xs text-muted">Confirmed by the provider before the visit.</span>
+                  </span>
+                </li>
+              </ul>
+            ) : (
+              <ul className="flex flex-col gap-3 text-sm">
+                <li className="flex gap-2.5">
+                  <Truck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--brand)" }} />
+                  <span>
+                    <span className="font-medium">Door delivery</span>
+                    <span className="block text-xs text-muted">
+                      Flat {formatCurrency(storeConfig.deliveryFeeFlat)} — pay online or on delivery.
+                    </span>
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <RotateCcw className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--brand)" }} />
+                  <span>
+                    <span className="font-medium">Easy returns</span>
+                    <span className="block text-xs text-muted">Report an issue within 7 days of delivery.</span>
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--brand)" }} />
+                  <span>
+                    <span className="font-medium">Secure checkout</span>
+                    <span className="block text-xs text-muted">Card, transfer & USSD via Paystack.</span>
+                  </span>
+                </li>
+              </ul>
+            )}
+          </div>
+          {(storeConfig.whatsappNumber || storeConfig.phone) && (
+            <div className="p-4 text-sm">
+              <span className="text-xs text-muted">Need help ordering?</span>
+              <div className="mt-1 flex flex-col gap-1">
+                {storeConfig.phone && (
+                  <a href={`tel:${storeConfig.phone}`} className="font-medium" style={{ color: "var(--brand)" }}>
+                    Call {storeConfig.phone}
+                  </a>
+                )}
+                {storeConfig.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${storeConfig.whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium"
+                    style={{ color: "var(--brand)" }}
+                  >
+                    Chat on WhatsApp
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
     </div>
 
-    <section className="md:max-w-2xl">
+    {/* Description + specs (full width) */}
+    {(product.description || specs.length > 0) && (
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-12">
+        <div className="flex flex-col gap-6 lg:col-span-9">
+          {product.description && (
+            <div>
+              <h2 className="mb-2 text-sm font-semibold">Description</h2>
+              <p className="text-sm leading-relaxed text-foreground/80">
+                {product.description}
+              </p>
+            </div>
+          )}
+          {specs.length > 0 && (
+            <div>
+              <h2 className="mb-2 text-sm font-semibold">Specifications</h2>
+              <dl
+                className="overflow-hidden rounded-xl border text-sm"
+                style={{ borderColor: "var(--border)" }}
+              >
+                {specs.map(([key, value], index) => (
+                  <div
+                    key={key}
+                    className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
+                    style={{ background: index % 2 === 0 ? "var(--surface)" : "transparent" }}
+                  >
+                    <dt className="text-muted">{key}</dt>
+                    <dd className="text-right font-medium">{String(value)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    <section className="lg:max-w-2xl">
       <h2 className="mb-3 text-sm font-semibold">
         Reviews{product.ratingCount > 0 ? ` (${product.ratingCount})` : ""}
       </h2>
@@ -202,7 +331,7 @@ export default async function ProductDetailPage({
     {related.length > 0 && (
       <section>
         <h2 className="mb-3 text-sm font-semibold">You may also like</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {related.map((rec) => (
             <ProductCard
               key={rec.id}
