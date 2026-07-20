@@ -123,7 +123,7 @@ async function main() {
       compareAtPrice: 38000,
       stock: 30,
       sku: "ELC-BS-003",
-      images: [],
+      images: ["https://ng.jumia.is/unsafe/fit-in/680x680/filters:fill(white)/product/96/8476814/1.jpg"],
       categoryId: electronics.id,
     },
     {
@@ -162,7 +162,7 @@ async function main() {
       compareAtPrice: 75000,
       stock: 15,
       sku: "FSH-LH-001",
-      images: [],
+      images: ["https://ng.jumia.is/unsafe/fit-in/680x680/filters:fill(white)/product/75/1610914/1.jpg"],
       categoryId: fashion.id,
     },
     {
@@ -180,7 +180,7 @@ async function main() {
       compareAtPrice: 45000,
       stock: 50,
       sku: "FSH-SN-002",
-      images: [],
+      images: ["https://img-1.kwcdn.com/product/fancy/fb2a23f3-302d-4d81-92b9-dd1d7c391b7c.jpg?imageView2/2/w/800/q/70/format/avif"],
       categoryId: fashion.id,
       variants: [
         { name: "EU 40", sku: "FSH-SN-002-40", stock: 12, options: { size: "40" } },
@@ -204,7 +204,7 @@ async function main() {
       compareAtPrice: 36500,
       stock: 22,
       sku: "FSH-DJ-003",
-      images: [],
+      images: ["https://ng.jumia.is/unsafe/fit-in/680x680/filters:fill(white)/product/58/5152093/1.jpg"],
       categoryId: fashion.id,
       variants: [
         { name: "M", sku: "FSH-DJ-003-M", stock: 8, options: { size: "M" } },
@@ -265,7 +265,7 @@ async function main() {
       compareAtPrice: 7500,
       stock: 45,
       sku: "GRC-HN-002",
-      images: [],
+      images: ["https://pictures-nigeria.jijistatic.net/202253701_MzAwLTQwMC00ZjMyZDE4ODQw.webp"],
       categoryId: grocery.id,
     },
     // Cosmetics
@@ -284,7 +284,7 @@ async function main() {
       compareAtPrice: 16500,
       stock: 35,
       sku: "CSM-LS-001",
-      images: [],
+      images: ["https://img.kwcdn.com/product/fancy/e5eb277e-d6b6-4b1a-abb2-57ca1f98389e.jpg?imageView2/2/w/800/q/70/format/avif"],
       categoryId: cosmetics.id,
     },
     {
@@ -302,7 +302,7 @@ async function main() {
       compareAtPrice: 22000,
       stock: 28,
       sku: "CSM-FS-002",
-      images: [],
+      images: ["https://ng.jumia.is/unsafe/fit-in/500x500/filters:fill(white)/product/73/3483914/1.jpg?0051"],
       categoryId: cosmetics.id,
       variants: [
         { name: "30ml", sku: "CSM-FS-002-30", stock: 18, options: { volume: "30ml" } },
@@ -326,7 +326,7 @@ async function main() {
       compareAtPrice: 15000,
       stock: 60,
       sku: "FSH-AK-005",
-      images: [],
+      images: ["https://www-konga-com-res.cloudinary.com/image/upload/f_auto,q_auto,w_1080,c_limit/media/catalog/product/J/J/219749_1730570190.jpg"],
       categoryId: fashion.id,
     },
     {
@@ -345,7 +345,7 @@ async function main() {
       compareAtPrice: 42000,
       stock: 25,
       sku: "FSH-SW-006",
-      images: [],
+      images: ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHlO04WZUESJGzXOdrYZ5LlKUAQqqsF0fIdwouduL1nA&s=10"],
       categoryId: fashion.id,
       variants: [
         { name: "M", sku: "FSH-SW-006-M", stock: 8, options: { size: "M" } },
@@ -368,7 +368,7 @@ async function main() {
       compareAtPrice: 22000,
       stock: 20,
       sku: "FSH-CN-007",
-      images: [],
+      images: ["https://v.etsystatic.com/video/upload/q_auto/tb89qwbbxpvuhlboicax.jpg"],
       categoryId: fashion.id,
     },
     {
@@ -432,7 +432,7 @@ async function main() {
       compareAtPrice: 29000,
       stock: 45,
       sku: "ELC-PB-006",
-      images: [],
+      images: ["https://www-konga-com-res.cloudinary.com/image/upload/f_auto,q_auto,w_1080,c_limit/media/catalog/product/Y/D/87003_1780417045.jpg"],
       categoryId: electronics.id,
     },
     {
@@ -451,7 +451,7 @@ async function main() {
       compareAtPrice: 68000,
       stock: 15,
       sku: "ELC-SL-007",
-      images: [img("photo-1509391366360-2e959784a276")],
+      images: ["https://www-konga-com-res.cloudinary.com/image/upload/f_auto,q_auto,w_1080,c_limit/media/catalog/product/Y/U/213685_1758622401.jpg"],
       categoryId: electronics.id,
     },
     {
@@ -492,7 +492,7 @@ async function main() {
       compareAtPrice: 7500,
       stock: 70,
       sku: "GRC-GR-004",
-      images: [img("photo-1586201375761-83865001e31c")],
+      images: ["https://www-konga-com-res.cloudinary.com/image/upload/f_auto,q_auto,w_1080,c_limit/media/catalog/product/V/U/173327_1781032232.jpg"],
       categoryId: grocery.id,
     },
     {
@@ -510,7 +510,7 @@ async function main() {
       compareAtPrice: 4200,
       stock: 90,
       sku: "GRC-PS-005",
-      images: [img("photo-1596040033229-a9821ebd058d")],
+      images: ["https://247foods.ng/wp-content/uploads/2025/03/Pepper-Soup-Spice-Half-Paint.png"],
       categoryId: grocery.id,
     },
     {
@@ -547,7 +547,7 @@ async function main() {
       compareAtPrice: 7000,
       stock: 55,
       sku: "CSM-SB-003",
-      images: [],
+      images: ["https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQBM8kiY1QUIm-0s-E5k_rTVUaa4Ae02Hao8-hV3YiPUc-MLZ-R3hMI2IqvP-aHEtnZGRrOBCositJz3aT6-aNSVfmQTI5FI0dn6PE60C7iIr12bIqKvLvA&usqp=CAc"],
       categoryId: cosmetics.id,
     },
     {
@@ -565,7 +565,7 @@ async function main() {
       compareAtPrice: 3800,
       stock: 80,
       sku: "CSM-BS-004",
-      images: [],
+      images: ["https://i.ebayimg.com/thumbs/images/g/qjYAAOSwEvVnuBcW/s-l500.jpg"],
       categoryId: cosmetics.id,
     },
     {
@@ -583,7 +583,7 @@ async function main() {
       compareAtPrice: 11000,
       stock: 65,
       sku: "CSM-PO-005",
-      images: [img("photo-1541643600914-78b084683601")],
+      images: ["https://www.essenza.ng/cdn/shop/products/ESSENZACOLLECTIONOudBlendPerfumeOil12ml.png?v=1627478305&width=400"],
       categoryId: cosmetics.id,
     },
     // Services — the template serves service brands too (bookings & quotes).
