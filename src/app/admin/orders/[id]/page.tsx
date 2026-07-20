@@ -3,7 +3,7 @@ import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
 import { setOrderStatus, setOrderTracking } from "@/app/actions/admin";
-import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/StatusBadge";
 
 export const metadata = { title: "Order" };
 

@@ -3,7 +3,7 @@ import { CalendarClock } from "lucide-react";
 import { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
-import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/StatusBadge";
 
 export const metadata = { title: "Orders" };
 

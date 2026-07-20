@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Banknote, MessageSquare, Package, ShoppingBag, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
-import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/StatusBadge";
 
 export const metadata = { title: "Dashboard" };
 
