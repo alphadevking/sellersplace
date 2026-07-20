@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function SignupPage() {
 
   return (
     <div className="card flex flex-col gap-5 p-6">
+      <LoadingOverlay show={submitting} label="Creating account…" />
       <div>
         <h1 className="text-lg font-semibold">Create your account</h1>
         <p className="text-sm text-muted">

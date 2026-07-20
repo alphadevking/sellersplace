@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { storeConfig } from "@/config/store";
+import RouteTransitionOverlay from "@/components/RouteTransitionOverlay";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -54,6 +55,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <RouteTransitionOverlay />
         <ServiceWorkerRegister />
       </body>
     </html>

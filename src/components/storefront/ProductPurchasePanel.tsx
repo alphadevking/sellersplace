@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Phone } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatCurrency } from "@/lib/currency";
+import { productHref } from "@/lib/product-url";
 import { storeConfig, whatsappLink } from "@/config/store";
 import { logContactClick } from "@/app/actions/inquiries";
 import InquiryForm from "@/components/storefront/InquiryForm";
@@ -71,8 +72,14 @@ export default function ProductPurchasePanel({
     (!!storeConfig.whatsappNumber || !!storeConfig.phone);
   const contactOnly = quoted || product.purchaseMode === "CONTACT_SELLER";
 
-  const productUrl =
-    typeof window !== "undefined" ? window.location.href : `/products/${product.slug}`;
+  // Server and the first client render must agree, so start with the relative
+  // path (matches SSR) and upgrade to the absolute URL only after mount —
+  // branching on `typeof window` during render is what caused the hydration
+  // mismatch here.
+  const [productUrl, setProductUrl] = useState(() => productHref(product));
+  useEffect(() => {
+    setProductUrl(window.location.href);
+  }, [product.slug]);
   const chatHref = whatsappLink(
     `Hi ${storeConfig.name}! I'm interested in "${product.name}"${selected ? ` (${selected.name})` : ""} — ${productUrl}`
   );

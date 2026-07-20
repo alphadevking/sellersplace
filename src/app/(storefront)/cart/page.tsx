@@ -6,6 +6,8 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
+import { productHref } from "@/lib/product-url";
+import SmartImage from "@/components/SmartImage";
 import { storeConfig } from "@/config/store";
 
 type Variant = {
@@ -104,14 +106,9 @@ export default function CartPage() {
               key={`${line.productId}:${line.variantId ?? ""}`}
               className="card-surface flex gap-3 p-3"
             >
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-2xl">
+              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-2xl">
                 {product.images?.[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="h-full w-full object-cover"
-                  />
+                  <SmartImage src={product.images[0]} alt={product.name} fill sizes="64px" />
                 ) : (
                   emojiForCategorySlug()
                 )}
@@ -120,7 +117,7 @@ export default function CartPage() {
               <div className="flex flex-1 flex-col justify-between">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col">
-                    <Link href={`/products/${product.slug}`} className="text-sm font-medium">
+                    <Link href={productHref(product)} className="text-sm font-medium">
                       {product.name}
                     </Link>
                     {variant && <span className="text-xs text-muted">{variant.name}</span>}

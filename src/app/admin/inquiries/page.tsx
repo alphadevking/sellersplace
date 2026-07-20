@@ -2,6 +2,7 @@ import Link from "next/link";
 import { InquiryStatus, Prisma } from "@prisma/client";
 import { MessageCircle, Phone, Mail } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { productHref } from "@/lib/product-url";
 import { setInquiryStatus } from "@/app/actions/admin";
 
 export const metadata = { title: "Inquiries" };
@@ -93,7 +94,7 @@ export default async function AdminInquiriesPage({
                     <span className="font-medium">
                       {inquiry.product ? (
                         <Link
-                          href={`/products/${inquiry.product.slug}`}
+                          href={productHref(inquiry.product)}
                           className="hover:underline"
                         >
                           {inquiry.product.name}

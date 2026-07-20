@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // useSearchParams() needs a Suspense boundary for prerendering.
 export default function LoginPage() {
@@ -47,6 +48,7 @@ function LoginForm() {
 
   return (
     <div className="card flex flex-col gap-5 p-6">
+      <LoadingOverlay show={submitting} label="Signing in…" />
       <div>
         <h1 className="text-lg font-semibold">Welcome back</h1>
         <p className="text-sm text-muted">Sign in to track orders and check out faster.</p>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/currency";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 /** Kicks off a Paystack payment for the outstanding balance on an order. */
 export default function PayBalanceButton({
@@ -39,6 +40,7 @@ export default function PayBalanceButton({
 
   return (
     <div className="flex flex-col gap-2">
+      <LoadingOverlay show={submitting} label="Redirecting to payment…" />
       <button onClick={handlePay} disabled={submitting} className="btn-primary">
         {submitting ? "Redirecting to payment…" : `Pay balance ${formatCurrency(balance)}`}
       </button>

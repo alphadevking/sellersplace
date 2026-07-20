@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { createInvoice } from "@/app/actions/admin";
 import { formatCurrency } from "@/lib/currency";
+import FormPendingOverlay from "@/components/FormPendingOverlay";
 
 type Line = { title: string; quantity: string; unitPrice: string };
 
@@ -34,6 +35,7 @@ export default function InvoiceForm({
 
   return (
     <form action={createInvoice} className="flex flex-col gap-4">
+      <FormPendingOverlay label="Issuing invoice…" />
       {inquiryId && <input type="hidden" name="inquiryId" value={inquiryId} />}
       <input
         type="hidden"

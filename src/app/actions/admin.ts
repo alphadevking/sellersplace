@@ -15,6 +15,7 @@ import { getAdminSession, requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { updateOrderStatus } from "@/lib/orders";
 import { uploadImage } from "@/lib/cloudinary";
+import { productHref } from "@/lib/product-url";
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
@@ -271,7 +272,7 @@ export async function updateProduct(formData: FormData) {
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${id}`);
   revalidatePath("/");
-  revalidatePath(`/products/${product.slug}`);
+  revalidatePath(productHref(product));
   redirect("/admin/products");
 }
 

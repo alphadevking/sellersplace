@@ -43,3 +43,12 @@ export async function getProductsByIds(ids: string[]) {
 export async function getAllCategories() {
   return prisma.category.findMany({ orderBy: { name: "asc" } });
 }
+
+/** Categories that actually have an active offering of this type — keeps the
+ * chip bar from listing a category that would render an empty catalog. */
+export async function getCategoriesForOfferingType(offeringType: "PRODUCT" | "SERVICE") {
+  return prisma.category.findMany({
+    where: { products: { some: { isActive: true, offeringType } } },
+    orderBy: { name: "asc" },
+  });
+}

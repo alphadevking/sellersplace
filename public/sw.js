@@ -1,7 +1,7 @@
 // SellerSpace Service Worker
 // Handles: app shell caching for offline/installable support, and web push notifications.
 
-const CACHE_NAME = "sellerspace-shell-v1";
+const CACHE_NAME = "sellerspace-shell-v2";
 const APP_SHELL = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -28,12 +28,21 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
+  if (!request.url.startsWith("http")) return; // chrome-extension:, blob:, etc.
+  // Cache.put() throws for 206 Partial Content — never true for a fresh GET, but
+  // range requests (video/audio scrubbing) trigger exactly that response.
+  if (request.headers.has("range")) return;
 
   event.respondWith(
     fetch(request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        // Only cache complete, successful, same-origin responses — a streamed
+        // or aborted body (e.g. an interrupted dev-server response) throws a
+        // NetworkError out of cache.put() otherwise.
+        if (response.ok && response.type === "basic") {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy).catch(() => {}));
+        }
         return response;
       })
       .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))

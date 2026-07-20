@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPurchasedProduct } from "@/lib/reviews";
+import { productHref } from "@/lib/product-url";
 
 export type ReviewFormState = { ok: boolean; error?: string };
 
@@ -48,7 +49,7 @@ export async function submitReview(
     _avg: { rating: true },
     _count: true,
   });
-  await prisma.product.update({
+  const updated = await prisma.product.update({
     where: { id: productId },
     data: {
       ratingAvg: agg._avg.rating ?? null,
@@ -56,6 +57,6 @@ export async function submitReview(
     },
   });
 
-  if (productSlug) revalidatePath(`/products/${productSlug}`);
+  if (productSlug) revalidatePath(productHref(updated));
   return { ok: true };
 }

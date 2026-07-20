@@ -60,6 +60,8 @@ export type CatalogFilter = {
   brands?: string[];
   minPrice?: number;
   maxPrice?: number;
+  /** Scopes the catalog to one side of the products/services split. */
+  offeringType?: "PRODUCT" | "SERVICE";
 };
 
 function baseWhere(filter: CatalogFilter) {
@@ -69,6 +71,7 @@ function baseWhere(filter: CatalogFilter) {
   };
   return {
     isActive: true,
+    ...(filter.offeringType ? { offeringType: filter.offeringType } : {}),
     ...(filter.categorySlug ? { category: { is: { slug: filter.categorySlug } } } : {}),
     ...(filter.brands?.length ? { brand: { in: filter.brands } } : {}),
     ...(Object.keys(price).length ? { price } : {}),
@@ -76,9 +79,9 @@ function baseWhere(filter: CatalogFilter) {
 }
 
 /** Real catalog price range (category-scoped) — bounds the price slider. */
-export async function getPriceBounds(categorySlug?: string) {
+export async function getPriceBounds(categorySlug?: string, offeringType?: "PRODUCT" | "SERVICE") {
   const agg = await prisma.product.aggregate({
-    where: baseWhere({ categorySlug }),
+    where: baseWhere({ categorySlug, offeringType }),
     _min: { price: true },
     _max: { price: true },
   });
@@ -89,11 +92,12 @@ export async function getPriceBounds(categorySlug?: string) {
 }
 
 /** Distinct brand names for the filter dropdown, narrowed by category when given. */
-export async function getCatalogBrands(categorySlug?: string) {
+export async function getCatalogBrands(categorySlug?: string, offeringType?: "PRODUCT" | "SERVICE") {
   const rows = await prisma.product.findMany({
     where: {
       isActive: true,
       brand: { not: null },
+      ...(offeringType ? { offeringType } : {}),
       ...(categorySlug ? { category: { is: { slug: categorySlug } } } : {}),
     },
     select: { brand: true },

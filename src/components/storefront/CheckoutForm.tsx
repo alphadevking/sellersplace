@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { formatCurrency } from "@/lib/currency";
 import { storeConfig } from "@/config/store";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 type Product = {
   id: string;
@@ -127,6 +128,7 @@ export default function CheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <LoadingOverlay show={submitting} label="Redirecting to payment…" />
       <h1 className="text-lg font-semibold">Checkout</h1>
 
       <div className="card-surface flex flex-col gap-3 p-4">

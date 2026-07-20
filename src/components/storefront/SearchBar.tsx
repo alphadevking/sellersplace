@@ -6,6 +6,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { Search, Loader2, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
+import { productHref } from "@/lib/product-url";
+import SmartImage from "@/components/SmartImage";
 import { terms } from "@/config/store";
 
 type SearchResult = {
@@ -14,6 +16,7 @@ type SearchResult = {
   name: string;
   price: string;
   priceType?: "FIXED" | "FROM" | "QUOTE";
+  offeringType?: "PRODUCT" | "SERVICE";
   images: string[];
   category?: { slug: string; name: string } | null;
 };
@@ -127,7 +130,7 @@ export default function SearchBar({ className = "" }: { className?: string }) {
     } else if (e.key === "Enter" && activeIndex >= 0) {
       e.preventDefault();
       setOpen(false);
-      router.push(`/products/${results[activeIndex].slug}`);
+      router.push(productHref(results[activeIndex]));
     }
   }
 
@@ -226,7 +229,7 @@ export default function SearchBar({ className = "" }: { className?: string }) {
                 {results.map((product, index) => (
                   <li key={product.id} role="option" aria-selected={index === activeIndex}>
                     <Link
-                      href={`/products/${product.slug}`}
+                      href={productHref(product)}
                       onClick={() => setOpen(false)}
                       onMouseEnter={() => setActiveIndex(index)}
                       className="flex items-center gap-3 px-3 py-2.5 transition-colors"
@@ -234,14 +237,9 @@ export default function SearchBar({ className = "" }: { className?: string }) {
                         background: index === activeIndex ? "var(--surface)" : "transparent",
                       }}
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface text-lg">
+                      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface text-lg">
                         {product.images?.[0] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={product.images[0]}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
+                          <SmartImage src={product.images[0]} alt="" fill sizes="40px" />
                         ) : (
                           emojiForCategorySlug(product.category?.slug)
                         )}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ShoppingCart, User, Heart } from "lucide-react";
-import { storeConfig, terms } from "@/config/store";
+import { storeConfig, storeKind, terms } from "@/config/store";
 import { auth } from "@/lib/auth";
 import BottomNav from "@/components/storefront/BottomNav";
 import CartBadge from "@/components/storefront/CartBadge";
@@ -11,7 +11,8 @@ import { CartProvider } from "@/lib/cart-context";
 
 const DESKTOP_NAV = [
   { href: "/", label: "Home" },
-  { href: "/products", label: terms.catalog },
+  { href: "/products", label: storeKind === "hybrid" ? "Products" : terms.catalog },
+  ...(storeKind !== "retail" ? [{ href: "/services", label: "Services" }] : []),
 ];
 
 export default async function StorefrontLayout({

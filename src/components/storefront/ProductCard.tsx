@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Zap } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
+import { productHref } from "@/lib/product-url";
+import SmartImage from "@/components/SmartImage";
 import { storeConfig } from "@/config/store";
 import Stars from "@/components/storefront/Stars";
 import WishlistButton from "@/components/storefront/WishlistButton";
@@ -49,16 +51,17 @@ export default function ProductCard({
 
   return (
     <Link
-      href={`/products/${product.slug}`}
+      href={productHref(product)}
       className="card-surface group flex flex-col gap-1 p-3 transition-transform hover:-translate-y-0.5"
     >
       <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-background text-3xl">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SmartImage
             src={image}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+            fill
+            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+            className="transition-transform duration-200 group-hover:scale-105"
           />
         ) : (
           emojiForCategorySlug(product.category?.slug)
@@ -108,7 +111,7 @@ export default function ProductCard({
         </span>
       ) : showExpress ? (
         <span
-          className="mt-0.5 flex items-center gap-0.5 text-[10px] font-black italic tracking-tight"
+          className="mt-0.5 flex items-center gap-0.5 text-[10px] font-black italic tracking-tight opacity-75"
           style={{ color: "var(--brand)" }}
         >
           <Zap className="h-3 w-3 fill-current" />

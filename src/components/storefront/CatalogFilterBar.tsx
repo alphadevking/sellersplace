@@ -17,6 +17,8 @@ type Props = {
   sortOptions: SortOption[];
   query?: string;
   category?: string;
+  /** Catalog root this filter bar navigates within — /products or /services. */
+  basePath?: string;
 };
 
 /**
@@ -35,6 +37,7 @@ export default function CatalogFilterBar({
   sortOptions,
   query,
   category,
+  basePath = "/products",
 }: Props) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -79,7 +82,7 @@ export default function CatalogFilterBar({
     if (nextSort && nextSort !== "newest") search.set("sort", nextSort);
     setOpen(null);
     const qs = search.toString();
-    router.push(qs ? `/products?${qs}` : "/products");
+    router.push(qs ? `${basePath}?${qs}` : basePath);
   }
 
   const brandActive = selectedBrands.length > 0;

@@ -6,6 +6,7 @@ import { getAllCategories, getAllProducts } from "@/lib/products";
 import { getWishlistProductIds } from "@/lib/wishlist";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import ProductCard from "@/components/storefront/ProductCard";
+import SmartImage from "@/components/SmartImage";
 import TrustBar from "@/components/storefront/TrustBar";
 
 export default async function HomePage() {
@@ -72,10 +73,11 @@ export default async function HomePage() {
                 className="card-surface flex flex-col items-center gap-1.5 p-3 text-center transition-transform hover:-translate-y-0.5 active:scale-95"
               >
                 {cat.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <SmartImage
                     src={cat.imageUrl}
                     alt={cat.name}
+                    width={40}
+                    height={40}
                     className="h-10 w-10 rounded-full object-cover"
                   />
                 ) : (
@@ -101,7 +103,7 @@ export default async function HomePage() {
             or add products from the admin dashboard once it&apos;s built.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-6">
             {products.map((product) => (
               <ProductCard
                 key={product.id}

@@ -1,6 +1,7 @@
 import type { Category, Product } from "@prisma/client";
 import { createProduct, updateProduct } from "@/app/actions/admin";
 import ImagesField from "@/components/admin/ImagesField";
+import FormPendingOverlay from "@/components/FormPendingOverlay";
 
 /**
  * Shared create/edit product form. Server component — submits straight to a
@@ -17,6 +18,7 @@ export default function ProductForm({
 
   return (
     <form action={editing ? updateProduct : createProduct} className="flex flex-col gap-4">
+      <FormPendingOverlay label={editing ? "Saving changes…" : "Creating product…"} />
       {product && <input type="hidden" name="id" value={product.id} />}
 
       <label className="field-label">

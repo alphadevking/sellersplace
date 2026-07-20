@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
+import SmartImage from "@/components/SmartImage";
 import { toggleProductActive } from "@/app/actions/admin";
 
 export const metadata = { title: "Products" };
@@ -92,10 +93,9 @@ export default async function AdminProductsPage({
                   href={`/admin/products/${product.id}`}
                   className="flex min-w-0 flex-1 items-center gap-3"
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface text-xl">
+                  <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface text-xl">
                     {image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={image} alt="" className="h-full w-full object-cover" />
+                      <SmartImage src={image} alt="" fill sizes="48px" />
                     ) : (
                       emojiForCategorySlug(product.category?.slug)
                     )}

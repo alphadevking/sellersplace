@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import { terms } from "@/config/store";
+import SmartImage from "@/components/SmartImage";
 import { OrderStatusBadge } from "@/components/StatusBadge";
 import SignOutButton from "@/components/storefront/SignOutButton";
 import ReorderButton from "@/components/storefront/ReorderButton";
@@ -144,10 +145,9 @@ export default async function AccountPage() {
               return (
                 <div key={order.id} className="card flex flex-col gap-3 p-4">
                   <Link href={`/orders/${order.id}`} className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface text-xl">
+                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface text-xl">
                       {thumbnail ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={thumbnail} alt="" className="h-full w-full object-cover" />
+                        <SmartImage src={thumbnail} alt="" fill sizes="48px" />
                       ) : (
                         emojiForCategorySlug()
                       )}
