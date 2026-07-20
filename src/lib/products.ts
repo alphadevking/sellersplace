@@ -52,3 +52,33 @@ export async function getCategoriesForOfferingType(offeringType: "PRODUCT" | "SE
     orderBy: { name: "asc" },
   });
 }
+
+/**
+ * All categories, each tagged with the catalog it should link into —
+ * /services if it holds any active service, /products otherwise. Powers the
+ * homepage "Explore" grid, where one chip has to pick a single destination
+ * regardless of which side of the products/services split it belongs to.
+ */
+export async function getCategoriesWithCatalogHref() {
+  const [categories, serviceCategories] = await Promise.all([
+    prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.category.findMany({
+      where: { products: { some: { isActive: true, offeringType: "SERVICE" } } },
+      select: { id: true },
+    }),
+  ]);
+  const serviceIds = new Set(serviceCategories.map((c) => c.id));
+  return categories.map((category) => ({
+    ...category,
+    catalogHref: serviceIds.has(category.id) ? "/services" : "/products",
+  }));
+}
+
+/** Same routing rule as getCategoriesWithCatalogHref, for a single deep link. */
+export async function getCatalogHrefForCategorySlug(categorySlug: string) {
+  const hasService = await prisma.product.findFirst({
+    where: { isActive: true, offeringType: "SERVICE", category: { slug: categorySlug } },
+    select: { id: true },
+  });
+  return hasService ? "/services" : "/products";
+}

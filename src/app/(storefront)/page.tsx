@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { storeConfig, terms } from "@/config/store";
 import { auth } from "@/lib/auth";
-import { getAllCategories, getAllProducts } from "@/lib/products";
+import { getAllProducts, getCategoriesWithCatalogHref } from "@/lib/products";
 import { getWishlistProductIds } from "@/lib/wishlist";
 import { emojiForCategorySlug } from "@/lib/category-icons";
 import ProductCard from "@/components/storefront/ProductCard";
@@ -12,7 +12,7 @@ import TrustBar from "@/components/storefront/TrustBar";
 export default async function HomePage() {
   const session = await auth();
   const [categories, products, wishlistIds] = await Promise.all([
-    getAllCategories(),
+    getCategoriesWithCatalogHref(),
     getAllProducts(),
     getWishlistProductIds(session?.user?.id),
   ]);
@@ -69,7 +69,7 @@ export default async function HomePage() {
             {categories.map((cat) => (
               <Link
                 key={cat.slug}
-                href={`/products?category=${cat.slug}`}
+                href={`${cat.catalogHref}?category=${cat.slug}`}
                 className="card-surface flex flex-col items-center gap-1.5 p-3 text-center transition-transform hover:-translate-y-0.5 active:scale-95"
               >
                 {cat.imageUrl ? (
