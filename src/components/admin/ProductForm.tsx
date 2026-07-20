@@ -1,5 +1,6 @@
 import type { Category, Product } from "@prisma/client";
 import { createProduct, updateProduct } from "@/app/actions/admin";
+import ImagesField from "@/components/admin/ImagesField";
 
 /**
  * Shared create/edit product form. Server component — submits straight to a
@@ -164,16 +165,7 @@ export default function ProductForm({
         </select>
       </label>
 
-      <label className="field-label">
-        Image URLs (one per line)
-        <textarea
-          name="images"
-          rows={3}
-          defaultValue={product?.images?.join("\n") ?? ""}
-          placeholder={"https://example.com/front.jpg\nhttps://example.com/back.jpg"}
-          className="input-field font-mono text-xs"
-        />
-      </label>
+      <ImagesField defaultValue={product?.images?.join("\n") ?? ""} />
 
       <label className="flex items-center gap-2 text-sm">
         <input

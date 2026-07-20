@@ -11,9 +11,30 @@ import {
   Prisma,
   PurchaseMode,
 } from "@prisma/client";
-import { requireAdmin } from "@/lib/admin";
+import { getAdminSession, requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { updateOrderStatus } from "@/lib/orders";
+import { uploadImage } from "@/lib/cloudinary";
+
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
+export async function uploadProductImage(formData: FormData): Promise<{ url: string } | { error: string }> {
+  const session = await getAdminSession();
+  if (!session) return { error: "Not authorized" };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "No file provided" };
+  if (!file.type.startsWith("image/")) return { error: "File must be an image" };
+  if (file.size > MAX_UPLOAD_BYTES) return { error: "Image must be under 8MB" };
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const url = await uploadImage(buffer);
+    return { url };
+  } catch {
+    return { error: "Upload failed — please try again" };
+  }
+}
 
 export async function setOrderStatus(formData: FormData) {
   await requireAdmin();
