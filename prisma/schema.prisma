@@ -22,6 +22,7 @@ model User {
   wishlist          WishlistItem[]
   inquiries         Inquiry[]
   reviews           Review[]
+  conversation      Conversation?
 }
 
 model Address {
@@ -245,6 +246,62 @@ model SearchQuery {
   createdAt      DateTime @default(now())
 }
 
+/// One in-app support thread per customer (reopened rather than duplicated).
+/// Messages are TLS-in-transit + at-rest encrypted, NOT end-to-end — the store
+/// must read them to reply. WhatsApp remains the E2E channel.
+model Conversation {
+  id              String             @id @default(cuid())
+  userId          String             @unique
+  status          ConversationStatus @default(OPEN)
+  /// Denormalized for inbox ordering without joining messages.
+  lastMessageAt   DateTime           @default(now())
+  /// Read cursors per side — anything newer counts as unread for that side.
+  userLastReadAt  DateTime           @default(now())
+  adminLastReadAt DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages        ChatMessage[]
+  tickets         Ticket[]
+
+  @@index([status, lastMessageAt])
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  sender         ChatSender
+  /// Which admin/staff account authored a STORE message.
+  senderUserId   String?
+  /// The ticket that was active when this message was sent, if any — gives
+  /// each support issue its own auditable slice of the thread.
+  ticketId       String?
+  body           String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  ticket         Ticket?      @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+}
+
+/// A trackable support issue inside a chat thread. Escalating to a human opens
+/// one; the conversation is "with an agent" while it has an unresolved ticket.
+/// Minimal on purpose — categories/assignees/SLAs are additive later.
+model Ticket {
+  id             String       @id @default(cuid())
+  /// Customer-facing reference, e.g. "TKT-M9X2K1" (same scheme as invoices).
+  number         String       @unique
+  conversationId String
+  status         TicketStatus @default(OPEN)
+  openedAt       DateTime     @default(now())
+  resolvedAt     DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  messages       ChatMessage[]
+
+  @@index([status, openedAt])
+  @@index([conversationId])
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
@@ -259,6 +316,24 @@ enum Role {
   CUSTOMER
   ADMIN
   STAFF
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum ChatSender {
+  CUSTOMER
+  STORE
+  /// Automated FAQ/assistant replies — always labeled as such in the UI.
+  BOT
 }
 
 /// How a product can be bought: straight online payment, by contacting the

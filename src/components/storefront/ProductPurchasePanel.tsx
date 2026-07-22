@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Phone } from "lucide-react";
+import { Headset, MessageCircle, Phone } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatCurrency } from "@/lib/currency";
 import { productHref } from "@/lib/product-url";
@@ -67,9 +67,9 @@ export default function ProductPurchasePanel({
 
   // Quoted offerings have no chargeable price — contact is the only path.
   const canPayOnline = !quoted && product.purchaseMode !== "CONTACT_SELLER";
-  const canContact =
-    (quoted || product.purchaseMode !== "PAY_ONLINE") &&
-    (!!storeConfig.whatsappNumber || !!storeConfig.phone);
+  // Support chat is available on every offering (not just contact-mode ones);
+  // it renders as the primary action only when contact is the sole path.
+  const canContact = !!storeConfig.whatsappNumber || !!storeConfig.phone;
   const contactOnly = quoted || product.purchaseMode === "CONTACT_SELLER";
 
   // Server and the first client render must agree, so start with the relative
@@ -206,31 +206,47 @@ export default function ProductPurchasePanel({
           </div>
         )}
 
-        {canContact && (
-          <div className="flex gap-2 md:max-w-md">
-            {chatHref && (
-              <a
-                href={chatHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => void logContactClick(product.id, "WHATSAPP", selected?.name)}
-                className={contactOnly ? "btn-primary flex-1" : "btn-outline flex-1"}
-              >
-                <MessageCircle className="h-4 w-4" /> Chat with seller
-              </a>
-            )}
-            {storeConfig.phone && (
-              <a
-                href={`tel:${storeConfig.phone}`}
-                onClick={() => void logContactClick(product.id, "PHONE", selected?.name)}
-                className="btn-ghost"
-                aria-label="Call seller"
-              >
-                <Phone className="h-4 w-4" /> Call
-              </a>
-            )}
-          </div>
-        )}
+        <div className="flex gap-2 md:max-w-md">
+          {/* In-app support chat — opens the floating widget prefilled with
+              this product so the question lands with context. */}
+          <button
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent("sellersplace:openchat", {
+                  detail: {
+                    prefill: `About "${product.name}"${selected ? ` (${selected.name})` : ""}: `,
+                  },
+                })
+              )
+            }
+            className={contactOnly ? "btn-primary flex-1" : "btn-outline flex-1"}
+          >
+            <Headset className="h-4 w-4" /> Message us
+          </button>
+          {canContact && chatHref && (
+            <a
+              href={chatHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => void logContactClick(product.id, "WHATSAPP", selected?.name)}
+              className="btn-ghost"
+              aria-label="Chat on WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" /> WhatsApp
+            </a>
+          )}
+          {canContact && storeConfig.phone && (
+            <a
+              href={`tel:${storeConfig.phone}`}
+              onClick={() => void logContactClick(product.id, "PHONE", selected?.name)}
+              className="btn-ghost"
+              aria-label="Call seller"
+            >
+              <Phone className="h-4 w-4" />
+            </a>
+          )}
+        </div>
 
         {contactOnly && (
           <div className="mt-1">

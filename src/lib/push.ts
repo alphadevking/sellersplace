@@ -18,11 +18,10 @@ function ensureConfigured() {
   configured = true;
 }
 
+export type PushPayload = { title: string; body: string; url?: string };
+
 /** Sends a push notification to every device a given user has subscribed on. */
-export async function sendOrderStatusPush(
-  userId: string,
-  payload: { title: string; body: string; url?: string }
-) {
+export async function sendPushToUser(userId: string, payload: PushPayload) {
   ensureConfigured();
   if (!configured) return;
 
@@ -39,4 +38,23 @@ export async function sendOrderStatusPush(
       )
     )
   );
+}
+
+/** Notifies every ADMIN/STAFF device — e.g. a new support message or ticket. */
+export async function sendPushToAdmins(payload: PushPayload) {
+  ensureConfigured();
+  if (!configured) return;
+
+  const admins = await prisma.user.findMany({
+    where: { role: { in: ["ADMIN", "STAFF"] } },
+    select: { id: true },
+  });
+  await Promise.allSettled(
+    admins.map((a: (typeof admins)[number]) => sendPushToUser(a.id, payload))
+  );
+}
+
+/** Back-compat wrapper — the orders flow keeps its original entry point. */
+export async function sendOrderStatusPush(userId: string, payload: PushPayload) {
+  return sendPushToUser(userId, payload);
 }

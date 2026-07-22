@@ -6,6 +6,7 @@ const SHOP_LINKS = [
   { href: "/products", label: terms.allCatalog },
   { href: "/wishlist", label: "Wishlist" },
   { href: "/cart", label: "Cart" },
+  { href: "/support", label: "Support" },
 ];
 
 const ACCOUNT_LINKS = [

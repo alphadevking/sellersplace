@@ -15,6 +15,14 @@ export async function logContactClick(
 ) {
   try {
     const session = await auth();
+    // Light abuse cap for signed-in users; anonymous clicks are metadata-only.
+    if (session?.user?.id) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const recent = await prisma.inquiry.count({
+        where: { userId: session.user.id, createdAt: { gt: oneHourAgo } },
+      });
+      if (recent >= 30) return;
+    }
     await prisma.inquiry.create({
       data: {
         productId,
@@ -49,7 +57,25 @@ export async function submitInquiry(
     return { ok: false, error: "One of the fields is too long." };
   }
 
+  // Basic abuse control: cap how many form inquiries a single contact (or
+  // signed-in user) can file per hour. DB-count based, so it works on
+  // serverless without extra infrastructure.
   const session = await auth();
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const recent = await prisma.inquiry.count({
+    where: {
+      channel: "FORM",
+      createdAt: { gt: oneHourAgo },
+      OR: [{ contact }, ...(session?.user?.id ? [{ userId: session.user.id }] : [])],
+    },
+  });
+  if (recent >= 5) {
+    return {
+      ok: false,
+      error: "You've sent several inquiries recently — please give us a little time to respond.",
+    };
+  }
+
   await prisma.inquiry.create({
     data: {
       productId,
