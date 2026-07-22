@@ -44,8 +44,8 @@ export default function SignupPage() {
   return (
     <div className="card flex flex-col gap-5 p-6">
       <LoadingOverlay show={submitting} label="Creating account…" />
-      <div>
-        <h1 className="text-lg font-semibold">Create your account</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="font-display text-2xl font-semibold tracking-[-0.01em]">Create your account</h1>
         <p className="text-sm text-muted">
           Save your details for faster checkout and order tracking.
         </p>
@@ -85,10 +85,10 @@ export default function SignupPage() {
         </label>
 
         {error && (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
+          <p className="alert-error" role="alert">{error}</p>
         )}
 
-        <button type="submit" disabled={submitting} className="btn-primary">
+        <button type="submit" disabled={submitting} className="btn-primary justify-center">
           {submitting ? "Creating account…" : "Create account"}
         </button>
       </form>

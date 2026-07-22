@@ -52,7 +52,7 @@ export default function ProductCard({
   return (
     <Link
       href={productHref(product)}
-      className="card-surface group flex flex-col gap-1 p-3 transition-transform hover:-translate-y-0.5"
+      className="card-interactive group flex flex-col p-2.5"
     >
       <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-background text-3xl">
         {image ? (
@@ -60,64 +60,65 @@ export default function ProductCard({
             src={image}
             alt={product.name}
             fill
-            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-            className="transition-transform duration-200 group-hover:scale-105"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 18vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           emojiForCategorySlug(product.category?.slug)
         )}
         <WishlistButton productId={product.id} initialWishlisted={wishlisted ?? false} />
-      </div>
-
-      {product.brand && (
-        <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-muted">
-          {product.brand}
-        </span>
-      )}
-      <span className={`line-clamp-2 text-sm leading-snug ${product.brand ? "" : "mt-1"}`}>
-        {product.name}
-      </span>
-
-      <span className="text-[15px] font-bold" style={{ color: "var(--brand)" }}>
-        {quoted
-          ? "Request a quote"
-          : `${product.priceType === "FROM" ? "From " : ""}${formatCurrency(price)}`}
-      </span>
-      {discount && (
-        <span className="flex items-center gap-1.5">
-          <span className="text-xs text-muted line-through">{formatCurrency(compareAt!)}</span>
+        {discount && (
           <span
-            className="rounded px-1.5 py-0.5 text-[10px] font-bold"
-            style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+            className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+            style={{ background: "var(--brand)" }}
           >
             -{discount}%
           </span>
-        </span>
-      )}
+        )}
+      </div>
 
-      {(product.ratingCount ?? 0) > 0 && (
-        <span className="flex items-center gap-1 text-[11px] text-muted">
-          <Stars rating={Number(product.ratingAvg ?? 0)} size={12} />(
-          {product.ratingCount})
+      <div className="flex flex-1 flex-col gap-1 px-1 pb-1 pt-2.5">
+        {product.brand && (
+          <span className="eyebrow text-[10px]">{product.brand}</span>
+        )}
+        <span className="line-clamp-2 text-sm leading-snug text-foreground/90">
+          {product.name}
         </span>
-      )}
 
-      {chatOnly ? (
-        <span
-          className="mt-0.5 w-fit rounded-full px-2 py-0.5 text-[10px] font-medium"
-          style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
-        >
-          Chat to order
-        </span>
-      ) : showExpress ? (
-        <span
-          className="mt-0.5 flex items-center gap-0.5 text-[10px] font-black italic tracking-tight opacity-75"
-          style={{ color: "var(--brand)" }}
-        >
-          <Zap className="h-3 w-3 fill-current" />
-          {storeConfig.expressBadge.toUpperCase()}
-        </span>
-      ) : null}
+        {(product.ratingCount ?? 0) > 0 && (
+          <span className="flex items-center gap-1 text-[11px] text-muted">
+            <Stars rating={Number(product.ratingAvg ?? 0)} size={12} />
+            <span>({product.ratingCount})</span>
+          </span>
+        )}
+
+        <div className="mt-auto flex flex-col gap-1 pt-1.5">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-[15px] font-semibold" style={{ color: "var(--brand)" }}>
+              {quoted
+                ? "Request a quote"
+                : `${product.priceType === "FROM" ? "From " : ""}${formatCurrency(price)}`}
+            </span>
+            {discount && (
+              <span className="text-xs text-muted line-through">
+                {formatCurrency(compareAt!)}
+              </span>
+            )}
+          </div>
+
+          {chatOnly ? (
+            <span className="w-fit text-[11px] font-medium text-muted">Chat to order</span>
+          ) : showExpress ? (
+            <span
+              className="flex items-center gap-0.5 text-[10px] font-black italic tracking-tight opacity-70"
+              style={{ color: "var(--brand)" }}
+            >
+              <Zap className="h-3 w-3 fill-current" />
+              {storeConfig.expressBadge.toUpperCase()}
+            </span>
+          ) : null}
+        </div>
+      </div>
     </Link>
   );
 }

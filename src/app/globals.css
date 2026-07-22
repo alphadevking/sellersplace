@@ -3,15 +3,31 @@
 :root {
   --background: #ffffff;
   --foreground: #14140f;
-  --surface: #f7f6f3;
-  --border: #ececea;
-  --muted: #85837c;
+  --surface: #f6f5f2;
+  /* A second, slightly deeper surface for nested fills (image wells, chips). */
+  --surface-2: #efede8;
+  --border: #e7e5e1;
+  /* Stronger than the old #85837c so secondary text clears WCAG AA on white. */
+  --muted: #6f6d66;
   /* --brand is overridden inline per deployment from storeConfig.primaryColor */
   --brand: #dc2626;
   --brand-foreground: #ffffff;
   /* Derived shades so any brand color still gets sensible hover/press states. */
   --brand-hover: color-mix(in srgb, var(--brand) 88%, black);
   --brand-soft: color-mix(in srgb, var(--brand) 10%, white);
+  /* Semantic accent aliases — surfaces reference these so the brand can be
+     re-tuned in one place without hunting raw var(--brand) fills. */
+  --accent: var(--brand);
+  --accent-soft: var(--brand-soft);
+  /* Keyboard focus ring + editorial elevation. Shadows stay whisper-soft so
+     the design leans on type and space, not drop shadows. */
+  --ring: color-mix(in srgb, var(--brand) 45%, transparent);
+  --shadow-sm: 0 1px 2px rgba(20, 20, 15, 0.04);
+  --shadow-md: 0 6px 24px -12px rgba(20, 20, 15, 0.18);
+  /* Danger stays a fixed red regardless of the brand hue — errors must always
+     read as errors even when a deployment re-themes the accent to, say, blue. */
+  --danger: #c81e1e;
+  --danger-soft: #fdecec;
   color-scheme: light;
 }
 
@@ -19,13 +35,19 @@
    Warm dark neutrals from the SellersPlace design system; the brand hue is
    unchanged but its derivations flip toward the dark canvas. */
 [data-theme="dark"] {
-  --background: #121210;
-  --foreground: #f2f1ec;
-  --surface: #1c1c19;
-  --border: #2a2a26;
-  --muted: #96948c;
+  --background: #100f0d;
+  --foreground: #f3f2ed;
+  --surface: #1a1a17;
+  --surface-2: #232320;
+  --border: #2b2b27;
+  --muted: #a3a199;
   --brand-hover: color-mix(in srgb, var(--brand) 80%, white);
-  --brand-soft: color-mix(in srgb, var(--brand) 18%, #121210);
+  --brand-soft: color-mix(in srgb, var(--brand) 20%, #100f0d);
+  --ring: color-mix(in srgb, var(--brand) 55%, transparent);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 30px -12px rgba(0, 0, 0, 0.7);
+  --danger: #f87171;
+  --danger-soft: color-mix(in srgb, #f87171 16%, #100f0d);
   color-scheme: dark;
 }
 
@@ -33,14 +55,18 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-soft: var(--brand-soft);
   --color-brand-foreground: var(--brand-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
 }
 
 body {
@@ -48,11 +74,59 @@ body {
   color: var(--foreground);
 }
 
+/* Global keyboard focus ring — one accessible affordance for every interactive
+   element. :where() keeps specificity at 0 so components can still override,
+   and :focus-visible means mouse users never see it. Inputs opt out here since
+   .input-field paints its own focus glow below. */
+:where(a, button, [role="button"], summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Editorial type utilities. Headings use the display face with tight tracking
+   and balanced wrapping; the body stays on Geist. Applied explicitly on
+   storefront surfaces so admin typography is left untouched. The `.font-display`
+   utility itself is generated from the --font-display theme token above. */
+/* Display headings — a grotesque display face with tight tracking. */
+@utility display-hero {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+  @apply font-semibold;
+  letter-spacing: -0.025em;
+  line-height: 1.0;
+  text-wrap: balance;
+}
+@utility section-title {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+  @apply text-2xl font-semibold sm:text-3xl;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+@utility eyebrow {
+  @apply text-[11px] font-medium uppercase tracking-[0.18em] text-muted;
+}
+
+/* Hairline-bordered pill — the floating-nav and chip language from the
+   reference. Translucent so the canvas shows through. */
+@utility chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium;
+  border-color: var(--border);
+}
+/* Rounded-full CTA variant for the most editorial buttons. */
+@utility btn-pill {
+  @apply rounded-full;
+}
+
 /* Defined as a utility (not a component class) so `@apply btn` below keeps
    working on Tailwind v4.3+, which can no longer apply component-layer classes. */
 @utility btn {
   @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium
-    transition-all duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    transition-[transform,background-color,box-shadow,filter] duration-150 active:scale-[0.98]
+    disabled:pointer-events-none disabled:opacity-50;
+}
+/* Larger, more confident CTA for editorial moments (hero, PDP buy). */
+@utility btn-lg {
+  @apply rounded-2xl px-6 py-3.5 text-[15px] font-semibold;
 }
 
 @layer components {
@@ -88,13 +162,44 @@ body {
   .card {
     @apply rounded-2xl border bg-background;
     border-color: var(--border);
+    box-shadow: var(--shadow-sm);
   }
   .card-surface {
     @apply rounded-2xl bg-surface;
   }
+  /* Tappable surface (product/category tiles) — a restrained lift on hover
+     instead of shouting with brand fills. */
+  .card-interactive {
+    @apply rounded-2xl bg-surface transition-[transform,box-shadow] duration-200;
+  }
+  .card-interactive:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
 
   .field-label {
     @apply flex flex-col gap-1.5 text-xs font-medium text-muted;
+  }
+  /* Themed error banner — works in both light and dark, unlike the hardcoded
+     bg-red-50/text-red-700 it replaces. */
+  .alert-error {
+    @apply rounded-xl border px-3.5 py-3 text-sm;
+    background: var(--danger-soft);
+    border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+    color: color-mix(in srgb, var(--danger) 72%, var(--foreground));
+  }
+}
+
+/* Respect users who ask for less motion — neutralises every hover lift, scale,
+   and transition the design uses. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -102,6 +207,36 @@ body {
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Indeterminate top progress bar for route transitions — a non-blocking
+   navigation cue that never dims already-visible content. */
+@keyframes route-bar-slide {
+  0% {
+    left: -45%;
+    width: 45%;
+  }
+  50% {
+    width: 55%;
+  }
+  100% {
+    left: 100%;
+    width: 45%;
+  }
+}
+.route-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--brand);
+  border-radius: 9999px;
+  box-shadow: 0 0 12px 1px var(--brand);
+  animation: route-bar-slide 1.05s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-bar {
+    animation-duration: 2s;
   }
 }
 

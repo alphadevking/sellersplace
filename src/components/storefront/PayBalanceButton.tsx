@@ -44,7 +44,7 @@ export default function PayBalanceButton({
       <button onClick={handlePay} disabled={submitting} className="btn-primary">
         {submitting ? "Redirecting to payment…" : `Pay balance ${formatCurrency(balance)}`}
       </button>
-      {error && <p className="rounded-lg bg-red-50 p-2.5 text-xs text-red-700">{error}</p>}
+      {error && <p className="alert-error text-xs" role="alert">{error}</p>}
     </div>
   );
 }

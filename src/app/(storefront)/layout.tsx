@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { ShoppingCart, User, Heart } from "lucide-react";
+import { ShoppingBag, Heart, Sparkle, User } from "lucide-react";
 import { storeConfig, storeKind, terms } from "@/config/store";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import BottomNav from "@/components/storefront/BottomNav";
-import CartBadge from "@/components/storefront/CartBadge";
+import CartCount from "@/components/storefront/CartCount";
+import CountBadge from "@/components/storefront/CountBadge";
 import Footer from "@/components/storefront/Footer";
 import SearchBar from "@/components/storefront/SearchBar";
+import NavLink from "@/components/storefront/NavLink";
 import ThemeToggle from "@/components/ThemeToggle";
 import { CartProvider } from "@/lib/cart-context";
 
@@ -21,62 +24,81 @@ export default async function StorefrontLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  const wishlistCount = session?.user
+    ? await prisma.wishlistItem.count({ where: { userId: session.user.id } })
+    : 0;
 
   return (
     <CartProvider>
-      <div className="flex min-h-screen flex-col bg-background">
-        <header
-          className="sticky top-0 z-40 border-b bg-background/85 shadow-sm shadow-black/5 backdrop-blur-xl [padding-top:env(safe-area-inset-top)]"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3.5 md:gap-8">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
-              {storeConfig.name}
-            </Link>
+      <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
+        {/* Floating pill navigation — a fixed overlay that sits above
+            everything (including the full-bleed hero, which bleeds up behind
+            it). pointer-events-none on the bar lets clicks fall through the
+            transparent gaps; each pill re-enables them. */}
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 [padding-top:calc(env(safe-area-inset-top)+1.5rem)] sm:px-4">
+          <div className="mx-auto flex max-w-[1440px] items-center gap-3">
+            {/* Left pill: brand + primary nav */}
+            <div
+              className="pointer-events-auto flex flex-1 items-center gap-4 rounded-full border bg-background/70 py-2 pl-4 pr-2 backdrop-blur-sm md:gap-6 md:pl-5"
+              style={{ borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}
+            >
+              <Link
+                href="/"
+                className="flex items-center gap-2 font-display text-lg font-medium tracking-[-0.01em]"
+              >
+                <Sparkle className="h-4 w-4 fill-current" style={{ color: "var(--brand)" }} />
+                {storeConfig.name}
+              </Link>
 
-            <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
-              {DESKTOP_NAV.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="text-sm text-foreground/70 transition-colors hover:text-foreground"
-                >
-                  {label}
-                </Link>
-              ))}
-            </nav>
+              <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
+                {DESKTOP_NAV.map(({ href, label }) => (
+                  <NavLink key={href} href={href} label={label} />
+                ))}
+              </nav>
 
-            <SearchBar className="hidden max-w-md flex-1 md:block" />
+              <SearchBar className="ml-auto hidden max-w-xl flex-1 lg:block" />
+            </div>
 
-            <div className="flex items-center gap-4">
+            {/* Right pill: actions with bracketed counters */}
+            <div
+              className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/70 px-2 py-2 backdrop-blur-sm"
+              style={{ borderColor: "var(--border)", boxShadow: "var(--shadow-sm)" }}
+            >
               <ThemeToggle />
               <Link
-                href="/wishlist"
-                aria-label="Wishlist"
-                className="hidden text-foreground/80 hover:text-foreground md:block"
-              >
-                <Heart className="h-5 w-5" />
-              </Link>
-              <Link
                 href={session?.user ? "/account" : "/login"}
-                aria-label="Account"
-                className="hidden items-center gap-1.5 text-sm text-foreground/80 hover:text-foreground sm:flex"
+                aria-label={session?.user ? "Account" : "Sign in"}
+                className="hidden rounded-full p-1.5 text-foreground/80 transition-colors hover:bg-surface hover:text-foreground sm:block"
               >
                 <User className="h-4 w-4" />
-                {session?.user ? session.user.name?.split(" ")[0] || "Account" : "Sign in"}
               </Link>
-              <Link href="/cart" aria-label="Cart" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                <CartBadge />
+              <Link
+                href="/wishlist"
+                className="hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-sm text-foreground transition-colors hover:bg-surface sm:flex"
+              >
+                <Heart className="h-4 w-4" />
+                <span className="hidden md:inline">Favorite</span>
+                <CountBadge count={wishlistCount} />
+              </Link>
+              <Link
+                href="/cart"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm text-foreground transition-colors hover:bg-surface"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span className="hidden md:inline">Cart</span>
+                <CartCount />
               </Link>
             </div>
           </div>
-          <div className="mx-auto max-w-6xl px-4 pb-3.5 md:hidden">
+          <div className="pointer-events-auto mx-auto mt-3 max-w-[1440px] px-1 lg:hidden">
             <SearchBar />
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-5 md:pb-12 md:pt-8">
+        {/* Top padding clears the fixed header (taller below lg where the mobile
+            search row shows). The home hero cancels it with a matching -mt to
+            bleed up behind the nav. */}
+        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-24 pt-32 md:pb-16 lg:pt-24">
           {children}
         </main>
 

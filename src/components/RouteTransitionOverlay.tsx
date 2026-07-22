@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import LoadingOverlay from "@/components/LoadingOverlay";
+import TopProgressBar from "@/components/TopProgressBar";
 
 // Debounced so a near-instant navigation never flashes the overlay.
 const SHOW_DELAY_MS = 150;
@@ -163,7 +163,7 @@ export default function RouteTransitionOverlay() {
       <Suspense fallback={null}>
         <NavigationWatcher prevKeyRef={prevKeyRef} onNavigate={stop} />
       </Suspense>
-      <LoadingOverlay show={visible} />
+      <TopProgressBar show={visible} />
     </>
   );
 }

@@ -69,7 +69,7 @@ export default function ReviewForm({
         className="input-field"
       />
       {state.error && (
-        <p className="rounded-lg bg-red-50 p-2.5 text-xs text-red-700">{state.error}</p>
+        <p className="alert-error text-xs" role="alert">{state.error}</p>
       )}
       <button
         type="submit"

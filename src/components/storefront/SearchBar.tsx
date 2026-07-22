@@ -149,8 +149,11 @@ export default function SearchBar({ className = "" }: { className?: string }) {
         }}
       >
         <label
-          className="flex items-center gap-2 rounded-xl bg-surface px-3.5 py-2.5 text-sm text-muted transition-shadow focus-within:ring-2"
-          style={{ ["--tw-ring-color" as string]: "var(--brand-soft)" }}
+          className="flex items-center gap-2.5 rounded-full border bg-background/70 px-4 py-2.5 text-sm text-muted transition-shadow focus-within:ring-2 backdrop-blur-sm"
+          style={{
+            borderColor: "var(--border)",
+            ["--tw-ring-color" as string]: "var(--ring)",
+          }}
         >
           {loading ? (
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" />

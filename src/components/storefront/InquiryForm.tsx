@@ -58,7 +58,7 @@ export default function InquiryForm({
         />
       </label>
       {state.error && (
-        <p className="rounded-lg bg-red-50 p-2.5 text-xs text-red-700">{state.error}</p>
+        <p className="alert-error text-xs" role="alert">{state.error}</p>
       )}
       <button type="submit" disabled={pending} className="btn-primary self-start">
         {pending ? "Sending…" : "Send inquiry"}

@@ -55,7 +55,9 @@ export default async function AccountPage() {
           {initials(user.name, user.email)}
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h1 className="truncate text-base font-semibold">{user.name || user.email}</h1>
+          <h1 className="truncate font-display text-xl font-semibold tracking-[-0.01em]">
+            {user.name || user.email}
+          </h1>
           <span className="truncate text-sm text-muted">{user.email}</span>
           <span className="text-xs text-muted">Member since {memberSince}</span>
         </div>
@@ -72,19 +74,19 @@ export default async function AccountPage() {
 
       {/* Stats — a quick, rewarding snapshot of the relationship so far */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="card-surface flex flex-col items-center gap-0.5 p-3 text-center">
-          <span className="text-lg font-bold">{orders.length}</span>
+        <div className="card-surface flex flex-col items-center gap-0.5 p-4 text-center">
+          <span className="font-display text-xl font-semibold">{orders.length}</span>
           <span className="text-[11px] text-muted">Orders</span>
         </div>
-        <div className="card-surface flex flex-col items-center gap-0.5 p-3 text-center">
-          <span className="text-lg font-bold">{formatCurrency(totalSpent)}</span>
+        <div className="card-surface flex flex-col items-center gap-0.5 p-4 text-center">
+          <span className="font-display text-xl font-semibold">{formatCurrency(totalSpent)}</span>
           <span className="text-[11px] text-muted">Total spent</span>
         </div>
         <Link
           href="/wishlist"
-          className="card-surface flex flex-col items-center gap-0.5 p-3 text-center transition-colors hover:bg-background"
+          className="card-interactive flex flex-col items-center gap-0.5 p-4 text-center"
         >
-          <span className="text-lg font-bold">{wishlistCount}</span>
+          <span className="font-display text-xl font-semibold">{wishlistCount}</span>
           <span className="text-[11px] text-muted">Wishlist</span>
         </Link>
       </div>
@@ -119,17 +121,19 @@ export default async function AccountPage() {
 
       {/* Order history */}
       <div>
-        <h2 className="mb-3 text-sm font-semibold">Order history</h2>
+        <h2 className="mb-3 font-display text-lg font-semibold">Order history</h2>
         {orders.length === 0 ? (
-          <div className="card-surface flex flex-col items-center gap-3 p-8 text-center">
-            <PackageSearch className="h-8 w-8" style={{ color: "var(--muted)" }} />
+          <div className="flex flex-col items-center gap-4 py-12 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface">
+              <PackageSearch className="h-7 w-7" style={{ color: "var(--muted)" }} />
+            </div>
             <div>
-              <p className="text-sm font-medium">No orders yet</p>
+              <p className="font-medium">No orders yet</p>
               <p className="mt-1 text-sm text-muted">
                 Your future orders will show up here, with tracking and reorder in one tap.
               </p>
             </div>
-            <Link href="/products" className="btn-primary w-full max-w-xs">
+            <Link href="/products" className="btn-primary btn-lg w-full max-w-xs justify-center">
               {terms.browse}
             </Link>
           </div>

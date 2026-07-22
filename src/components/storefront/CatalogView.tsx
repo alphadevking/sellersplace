@@ -117,8 +117,8 @@ export default async function CatalogView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="flex flex-wrap items-baseline gap-2 text-lg font-semibold">
+      <div className="flex flex-col gap-1.5">
+        <h1 className="section-title flex flex-wrap items-baseline gap-2.5">
           {query
             ? `Results for “${query}”`
             : activeCategory
@@ -126,8 +126,8 @@ export default async function CatalogView({
               : labels.heading}
           {!showingSuggestions && (
             <span className="text-sm font-normal text-muted">
-              ({total} {labels.noun}
-              {total !== 1 ? "s" : ""} found)
+              {total} {labels.noun}
+              {total !== 1 ? "s" : ""}
             </span>
           )}
         </h1>
@@ -146,9 +146,9 @@ export default async function CatalogView({
             style={
               !category
                 ? {
-                    background: "var(--brand)",
-                    borderColor: "var(--brand)",
-                    color: "var(--brand-foreground)",
+                    background: "var(--foreground)",
+                    borderColor: "var(--foreground)",
+                    color: "var(--background)",
                   }
                 : { borderColor: "var(--border)", color: "var(--muted)" }
             }
@@ -172,9 +172,9 @@ export default async function CatalogView({
                 style={
                   active
                     ? {
-                        background: "var(--brand)",
-                        borderColor: "var(--brand)",
-                        color: "var(--brand-foreground)",
+                        background: "var(--foreground)",
+                        borderColor: "var(--foreground)",
+                        color: "var(--background)",
                       }
                     : { borderColor: "var(--border)", color: "var(--muted)" }
                 }
@@ -222,7 +222,7 @@ export default async function CatalogView({
           )}
         </p>
       ) : (
-        <div className="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {products.map((product) => (
             <ProductCard
               key={product.id}

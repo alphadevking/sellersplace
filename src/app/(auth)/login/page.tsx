@@ -49,8 +49,8 @@ function LoginForm() {
   return (
     <div className="card flex flex-col gap-5 p-6">
       <LoadingOverlay show={submitting} label="Signing in…" />
-      <div>
-        <h1 className="text-lg font-semibold">Welcome back</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="font-display text-2xl font-semibold tracking-[-0.01em]">Welcome back</h1>
         <p className="text-sm text-muted">Sign in to track orders and check out faster.</p>
       </div>
 
@@ -77,10 +77,10 @@ function LoginForm() {
         </label>
 
         {error && (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
+          <p className="alert-error" role="alert">{error}</p>
         )}
 
-        <button type="submit" disabled={submitting} className="btn-primary">
+        <button type="submit" disabled={submitting} className="btn-primary justify-center">
           {submitting ? "Signing in…" : "Sign in"}
         </button>
       </form>

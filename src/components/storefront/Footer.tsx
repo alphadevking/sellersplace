@@ -21,10 +21,14 @@ export default function Footer() {
       className="mb-16 border-t bg-surface md:mb-0"
       style={{ borderColor: "var(--border)" }}
     >
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-4">
-        <div className="flex flex-col gap-2">
-          <span className="text-base font-semibold tracking-tight">{storeConfig.name}</span>
-          <p className="max-w-[28ch] text-sm text-muted">{storeConfig.description}</p>
+      <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-4">
+        <div className="flex flex-col gap-3">
+          <span className="font-display text-2xl font-semibold tracking-[-0.02em]">
+            {storeConfig.name}
+          </span>
+          <p className="max-w-[30ch] text-sm leading-relaxed text-muted">
+            {storeConfig.description}
+          </p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -60,7 +64,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t" style={{ borderColor: "var(--border)" }}>
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 text-xs text-muted">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 text-xs text-muted">
           <span>
             © {new Date().getFullYear()} {storeConfig.name}. All rights reserved.
           </span>

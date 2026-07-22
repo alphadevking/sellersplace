@@ -52,12 +52,15 @@ export default function CartPage() {
 
   if (lines.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <p className="text-sm text-muted">Your cart is empty.</p>
-        <Link
-          href="/products"
-          className="btn-primary"
-        >
+      <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-20 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-3xl">
+          🛒
+        </div>
+        <div className="flex flex-col gap-1">
+          <h1 className="section-title">Your cart is empty</h1>
+          <p className="text-sm text-muted">Add something you love and it&apos;ll show up here.</p>
+        </div>
+        <Link href="/products" className="btn-primary btn-lg">
           Browse products
         </Link>
       </div>
@@ -85,8 +88,11 @@ export default function CartPage() {
   const total = subtotal + deliveryFee;
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold">Your cart</h1>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
+        <span className="eyebrow">Review your order</span>
+        <h1 className="section-title">Your cart</h1>
+      </div>
 
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-6">
       <div className="flex flex-col gap-3">
@@ -179,7 +185,7 @@ export default function CartPage() {
 
         <Link
           href="/checkout"
-          className="btn-primary justify-center"
+          className="btn-primary btn-lg justify-center"
         >
           Proceed to checkout
         </Link>

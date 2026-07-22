@@ -56,6 +56,7 @@ export default async function ProductDetail({
         )
       : [];
 
+  const hasDetails = Boolean(product.description || specs.length > 0);
   const isService = product.offeringType === "SERVICE";
   const isQuote = product.priceType === "QUOTE";
   const isChatOnly = product.purchaseMode === "CONTACT_SELLER" || isQuote;
@@ -117,7 +118,9 @@ export default async function ProductDetail({
             <span className="text-xs font-medium text-muted">{product.brand}</span>
           )}
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-xl font-semibold md:text-2xl">{product.name}</h1>
+            <h1 className="font-display text-2xl font-semibold tracking-[-0.01em] md:text-3xl">
+              {product.name}
+            </h1>
             <WishlistButton
               productId={product.id}
               initialWishlisted={wishlistIds.has(product.id)}
@@ -250,105 +253,113 @@ export default async function ProductDetail({
       </aside>
     </div>
 
-    {/* Description + specs (full width) */}
-    {(product.description || specs.length > 0) && (
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-6">
-        <div className="flex flex-col gap-4 lg:col-span-9 lg:gap-6">
-          {product.description && (
-            <div>
-              <h2 className="mb-2 text-sm font-semibold">Description</h2>
-              <p className="text-sm leading-relaxed text-foreground/80">
-                {product.description}
-              </p>
-            </div>
-          )}
-          {specs.length > 0 && (
-            <div>
-              <h2 className="mb-2 text-sm font-semibold">Specifications</h2>
-              <dl
-                className="overflow-hidden rounded-xl border text-sm"
-                style={{ borderColor: "var(--border)" }}
-              >
-                {specs.map(([key, value], index) => (
-                  <div
-                    key={key}
-                    className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
-                    style={{ background: index % 2 === 0 ? "var(--surface)" : "transparent" }}
-                  >
-                    <dt className="text-muted">{key}</dt>
-                    <dd className="text-right font-medium">{String(value)}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
-        </div>
-      </div>
-    )}
-
-    <section className="lg:max-w-2xl">
-      <h2 className="mb-3 text-sm font-semibold">
-        Reviews{product.ratingCount > 0 ? ` (${product.ratingCount})` : ""}
-      </h2>
-      <div className="flex flex-col gap-3">
-        {product.reviews.length === 0 && (
-          <p className="card-surface p-4 text-sm text-muted">
-            No reviews yet — be the first verified buyer to leave one.
-          </p>
-        )}
-        {product.reviews.map((review) => (
-          <div key={review.id} className="card flex flex-col gap-1.5 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Stars rating={review.rating} />
-                <span className="text-sm font-medium">
-                  {review.user.name?.split(" ")[0] || "Customer"}
-                </span>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                  style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
-                >
-                  Verified buyer
-                </span>
+    {/* Reviews (left) + product details (right). On desktop the details panel
+        is sticky and scrolls within itself, so reading a long description never
+        moves the reviews — and vice versa. On mobile they simply stack, details
+        first (no nested scroll box, which would be janky on touch). */}
+    <div className={hasDetails ? "lg:grid lg:grid-cols-12 lg:items-start lg:gap-8" : ""}>
+      {hasDetails && (
+        <aside className="mb-8 lg:sticky lg:top-24 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:mb-0">
+          <div
+            className="flex flex-col gap-5 rounded-2xl border p-4 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:overscroll-contain"
+            style={{ borderColor: "var(--border)" }}
+          >
+            {product.description && (
+              <div>
+                <h2 className="mb-2.5 font-display text-lg font-semibold">Description</h2>
+                <p className="text-sm leading-relaxed text-foreground/80">
+                  {product.description}
+                </p>
               </div>
-              <span className="text-xs text-muted">
-                {review.createdAt.toLocaleDateString("en-NG", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </span>
-            </div>
-            {review.body && (
-              <p className="text-sm leading-relaxed text-foreground/80">{review.body}</p>
+            )}
+            {specs.length > 0 && (
+              <div>
+                <h2 className="mb-2.5 font-display text-lg font-semibold">Specifications</h2>
+                <dl
+                  className="overflow-hidden rounded-xl border text-sm"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  {specs.map(([key, value], index) => (
+                    <div
+                      key={key}
+                      className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
+                      style={{ background: index % 2 === 0 ? "var(--surface)" : "transparent" }}
+                    >
+                      <dt className="text-muted">{key}</dt>
+                      <dd className="text-right font-medium">{String(value)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             )}
           </div>
-        ))}
-        {!session?.user ? (
-          <p className="card-surface p-4 text-sm text-muted">
-            Bought this? Sign in to leave a verified review.
-          </p>
-        ) : canReview ? (
-          <ReviewForm
-            productId={product.id}
-            productSlug={product.slug}
-            initialRating={ownReview?.rating ?? 0}
-            initialBody={ownReview?.body ?? ""}
-          />
-        ) : (
-          <p className="card-surface p-4 text-sm text-muted">
-            Reviews come from verified buyers — order this
-            {product.offeringType === "SERVICE" ? " service" : " item"} and you&apos;ll be
-            able to share your experience here.
-          </p>
-        )}
-      </div>
-    </section>
+        </aside>
+      )}
+
+      <section className={hasDetails ? "lg:col-span-7 lg:col-start-1 lg:row-start-1" : ""}>
+        <h2 className="mb-4 section-title">
+          Reviews{product.ratingCount > 0 ? ` (${product.ratingCount})` : ""}
+        </h2>
+        <div className="flex flex-col gap-3">
+          {product.reviews.length === 0 && (
+            <p className="card-surface p-4 text-sm text-muted">
+              No reviews yet — be the first verified buyer to leave one.
+            </p>
+          )}
+          {product.reviews.map((review) => (
+            <div key={review.id} className="card flex flex-col gap-1.5 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Stars rating={review.rating} />
+                  <span className="text-sm font-medium">
+                    {review.user.name?.split(" ")[0] || "Customer"}
+                  </span>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+                  >
+                    Verified buyer
+                  </span>
+                </div>
+                <span className="text-xs text-muted">
+                  {review.createdAt.toLocaleDateString("en-NG", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+              {review.body && (
+                <p className="text-sm leading-relaxed text-foreground/80">{review.body}</p>
+              )}
+            </div>
+          ))}
+          {!session?.user ? (
+            <p className="card-surface p-4 text-sm text-muted">
+              Bought this? Sign in to leave a verified review.
+            </p>
+          ) : canReview ? (
+            <ReviewForm
+              productId={product.id}
+              productSlug={product.slug}
+              initialRating={ownReview?.rating ?? 0}
+              initialBody={ownReview?.body ?? ""}
+            />
+          ) : (
+            <p className="card-surface p-4 text-sm text-muted">
+              Reviews come from verified buyers — order this
+              {product.offeringType === "SERVICE" ? " service" : " item"} and you&apos;ll be
+              able to share your experience here.
+            </p>
+          )}
+        </div>
+      </section>
+    </div>
 
     {related.length > 0 && (
       <section>
-        <h2 className="mb-3 text-sm font-semibold">You may also like</h2>
-        <div className="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-5">
+        <h2 className="mb-4 section-title">You may also like</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {related.map((rec) => (
             <ProductCard
               key={rec.id}

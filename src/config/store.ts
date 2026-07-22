@@ -25,6 +25,25 @@ export const storeConfig = {
    * shown on directly-buyable physical products when set, e.g. "SELLERSPLACE EXPRESS".
    */
   expressBadge: process.env.NEXT_PUBLIC_STORE_EXPRESS_BADGE || "",
+  /**
+   * Home hero banner / ad slot. When set, the cinematic hero uses this image
+   * (a promo/campaign banner) and links to `heroCtaHref`. When empty, the hero
+   * falls back to the first catalog product image, then to a typographic hero.
+   * Any image URL works (Cloudinary/Unsplash are size-optimized; others render
+   * as-is via SmartImage's <img> fallback).
+   */
+  heroImage: process.env.NEXT_PUBLIC_STORE_HERO_IMAGE || "",
+  /**
+   * Hero background video (mp4/webm URL). Takes priority over heroImage and
+   * plays muted, looped, and inline; heroImage (or the first product image) is
+   * the poster/first frame while it buffers. Defaults to a royalty-free
+   * retail/shopping-mall clip (Pexels license — free for commercial use, no
+   * attribution); override per deployment with NEXT_PUBLIC_STORE_HERO_VIDEO.
+   */
+  heroVideo:
+    process.env.NEXT_PUBLIC_STORE_HERO_VIDEO ||
+    "https://videos.pexels.com/video-files/4517768/4517768-hd_1920_1080_30fps.mp4",
+  heroCtaHref: process.env.NEXT_PUBLIC_STORE_HERO_HREF || "/products",
 } as const;
 
 /** wa.me deep link with a prefilled message; empty string when WhatsApp isn't configured. */

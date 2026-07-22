@@ -129,7 +129,10 @@ export default function CheckoutForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <LoadingOverlay show={submitting} label="Redirecting to payment…" />
-      <h1 className="text-lg font-semibold">Checkout</h1>
+      <div className="flex flex-col gap-1">
+        <span className="eyebrow">Almost there</span>
+        <h1 className="section-title">Checkout</h1>
+      </div>
 
       <div className="card-surface flex flex-col gap-3 p-4">
         {loggedIn ? (
@@ -192,10 +195,10 @@ export default function CheckoutForm({
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
+        <p className="alert-error" role="alert">{error}</p>
       )}
 
-      <button type="submit" disabled={submitting} className="btn-primary">
+      <button type="submit" disabled={submitting} className="btn-primary btn-lg justify-center">
         {submitting ? "Redirecting to payment…" : `Pay ${formatCurrency(total)}`}
       </button>
     </form>
