@@ -8,7 +8,6 @@ import ChatWidget from "@/components/storefront/ChatWidget";
 import CartCount from "@/components/storefront/CartCount";
 import CountBadge from "@/components/storefront/CountBadge";
 import Footer from "@/components/storefront/Footer";
-import RouteHidden from "@/components/RouteHidden";
 import SearchBar from "@/components/storefront/SearchBar";
 import NavLink from "@/components/storefront/NavLink";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -104,9 +103,7 @@ export default async function StorefrontLayout({
           {children}
         </main>
 
-        <RouteHidden prefix="/support">
-          <Footer />
-        </RouteHidden>
+        <Footer />
         <BottomNav />
         <ChatWidget signedIn={!!session?.user} />
       </div>
