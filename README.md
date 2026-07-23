@@ -16,6 +16,7 @@ license per store.
 
 - [LICENSE](LICENSE) — the terms
 - [LICENSING.md](LICENSING.md) — how per-store licensing works
+- [ONBOARDING.md](ONBOARDING.md) — everything a business sets up to run a store
 - Get your business online: [nexhublabs@gmail.com](mailto:nexhublabs@gmail.com)
 
 ## Stack

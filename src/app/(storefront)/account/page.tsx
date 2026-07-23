@@ -8,6 +8,7 @@ import { emojiForCategorySlug } from "@/lib/category-icons";
 import { terms } from "@/config/store";
 import SmartImage from "@/components/SmartImage";
 import { OrderStatusBadge } from "@/components/StatusBadge";
+import ChangePasswordForm from "@/components/storefront/ChangePasswordForm";
 import SignOutButton from "@/components/storefront/SignOutButton";
 import ReorderButton from "@/components/storefront/ReorderButton";
 
@@ -120,6 +121,8 @@ export default async function AccountPage() {
           Open admin dashboard
         </Link>
       )}
+
+      <ChangePasswordForm />
 
       {/* Order history */}
       <div>

@@ -333,6 +333,26 @@ enum TicketStatus {
   RESOLVED
 }
 
+/// One-time email codes for signup verification and password reset. The code
+/// itself is never stored — only its bcrypt hash; attempts are counted so a
+/// code can't be brute-forced.
+model VerificationToken {
+  id        String              @id @default(cuid())
+  email     String
+  codeHash  String
+  purpose   VerificationPurpose
+  attempts  Int                 @default(0)
+  expiresAt DateTime
+  createdAt DateTime            @default(now())
+
+  @@index([email, purpose])
+}
+
+enum VerificationPurpose {
+  SIGNUP
+  PASSWORD_RESET
+}
+
 enum ChatSender {
   CUSTOMER
   STORE
