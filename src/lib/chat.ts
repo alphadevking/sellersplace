@@ -26,16 +26,55 @@ export async function getOpenTicket(conversationId: string) {
   });
 }
 
-/** Messages after an ISO-timestamp cursor (or all when no cursor). */
-export async function getMessagesAfter(conversationId: string, afterIso?: string) {
-  const after = afterIso ? new Date(afterIso) : undefined;
+/** Page size for history loads. */
+export const CHAT_PAGE_SIZE = 50;
+
+/** New messages after an ISO-timestamp cursor (the live-poll path). */
+export async function getMessagesAfter(conversationId: string, afterIso: string) {
+  const after = new Date(afterIso);
   return prisma.chatMessage.findMany({
     where: {
       conversationId,
-      ...(after && !Number.isNaN(after.getTime()) ? { createdAt: { gt: after } } : {}),
+      ...(!Number.isNaN(after.getTime()) ? { createdAt: { gt: after } } : {}),
     },
     orderBy: { createdAt: "asc" },
     take: 200,
+  });
+}
+
+/**
+ * A page of history ending at `beforeIso` (exclusive), or the latest page when
+ * no cursor — returned oldest-first, with a flag for whether earlier messages
+ * exist beyond this page.
+ */
+export async function getMessagePage(conversationId: string, beforeIso?: string) {
+  const before = beforeIso ? new Date(beforeIso) : undefined;
+  const rows = await prisma.chatMessage.findMany({
+    where: {
+      conversationId,
+      ...(before && !Number.isNaN(before.getTime()) ? { createdAt: { lt: before } } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    take: CHAT_PAGE_SIZE + 1,
+  });
+  const hasEarlier = rows.length > CHAT_PAGE_SIZE;
+  return { messages: rows.slice(0, CHAT_PAGE_SIZE).reverse(), hasEarlier };
+}
+
+/**
+ * The most recent resolved-but-unrated ticket, prompt-worthy for 7 days after
+ * resolution — powers the post-resolve CSAT card.
+ */
+export async function getRateableTicket(conversationId: string) {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  return prisma.ticket.findFirst({
+    where: {
+      conversationId,
+      status: "RESOLVED",
+      rating: null,
+      resolvedAt: { gt: sevenDaysAgo },
+    },
+    orderBy: { resolvedAt: "desc" },
   });
 }
 

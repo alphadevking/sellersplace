@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { FAQ_TOPICS } from "@/config/faq";
 import { storeConfig, whatsappLink } from "@/config/store";
 import {
   askFaqTopic,
   markChatRead,
+  rateTicket,
   requestAgent,
   sendChatMessage,
 } from "@/app/actions/chat";
@@ -20,8 +21,12 @@ type Message = {
 };
 
 type TicketInfo = { number: string; status: "OPEN" | "IN_PROGRESS" | "RESOLVED" } | null;
+type Rateable = { id: string; number: string } | null;
 
-const POLL_MS = 4_000;
+// Adaptive polling: fast while the user is actively chatting, relaxed when idle.
+const POLL_ACTIVE_MS = 2_000;
+const POLL_IDLE_MS = 15_000;
+const ACTIVE_WINDOW_MS = 60_000;
 
 /**
  * The support conversation — message list, quick replies, composer, escalation
@@ -48,11 +53,24 @@ export default function ChatConversation({
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [ticket, setTicket] = useState<TicketInfo>(null);
+  const [rateable, setRateable] = useState<Rateable>(null);
+  const [csat, setCsat] = useState<{ rating: 1 | 5 | null; comment: string; done: boolean }>({
+    rating: null,
+    comment: "",
+    done: false,
+  });
+  const [hasEarlier, setHasEarlier] = useState(false);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<string | undefined>(undefined);
+  const lastActivityRef = useRef(Date.now());
+
+  const bumpActivity = useCallback(() => {
+    lastActivityRef.current = Date.now();
+  }, []);
 
   const scrollToEnd = useCallback(() => {
     requestAnimationFrame(() => {
@@ -66,10 +84,19 @@ export default function ChatConversation({
       const qs = cursorRef.current ? `?after=${encodeURIComponent(cursorRef.current)}` : "";
       const res = await fetch(`/api/chat${qs}`);
       if (!res.ok) return;
-      const data = (await res.json()) as { messages: Message[]; ticket: TicketInfo };
+      const data = (await res.json()) as {
+        messages: Message[];
+        ticket: TicketInfo;
+        rateable: Rateable;
+        hasEarlier?: boolean;
+      };
       setTicket(data.ticket);
+      setRateable(data.rateable ?? null);
+      // hasEarlier only comes back on the initial (cursor-less) page load.
+      if (data.hasEarlier !== undefined) setHasEarlier(data.hasEarlier);
       if (data.messages.length > 0) {
         cursorRef.current = data.messages[data.messages.length - 1].createdAt;
+        bumpActivity(); // incoming traffic keeps the fast poll cadence
         setMessages((prev) => {
           // Server rows are the source of truth — drop optimistic echoes
           // (tmp- ids) before merging so a sent message never shows twice.
@@ -83,20 +110,72 @@ export default function ChatConversation({
     } catch {
       // Network blip — the next poll retries.
     }
-  }, [signedIn, scrollToEnd]);
+  }, [signedIn, scrollToEnd, bumpActivity]);
 
+  // Adaptive polling loop: 2s while active, 15s when idle, refresh on focus.
   useEffect(() => {
     if (!signedIn) return;
-    void poll();
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const loop = async () => {
+      if (stopped) return;
+      await poll();
+      if (stopped) return;
+      const active = Date.now() - lastActivityRef.current < ACTIVE_WINDOW_MS;
+      timer = setTimeout(loop, active ? POLL_ACTIVE_MS : POLL_IDLE_MS);
+    };
     void markChatRead();
-    const interval = setInterval(poll, POLL_MS);
-    const onFocus = () => void poll();
+    void loop();
+    const onFocus = () => {
+      bumpActivity();
+      void poll();
+    };
     window.addEventListener("focus", onFocus);
     return () => {
-      clearInterval(interval);
+      stopped = true;
+      clearTimeout(timer);
       window.removeEventListener("focus", onFocus);
     };
-  }, [signedIn, poll]);
+  }, [signedIn, poll, bumpActivity]);
+
+  /** Prepend an older page, keeping the viewport anchored on the same message. */
+  async function loadEarlier() {
+    const el = listRef.current;
+    const oldest = messages[0]?.createdAt;
+    if (!oldest || loadingEarlier) return;
+    setLoadingEarlier(true);
+    try {
+      const res = await fetch(`/api/chat?before=${encodeURIComponent(oldest)}`);
+      if (res.ok) {
+        const data = (await res.json()) as { messages: Message[]; hasEarlier: boolean };
+        const prevHeight = el?.scrollHeight ?? 0;
+        setMessages((prev) => {
+          const seen = new Set(prev.map((m) => m.id));
+          return [...data.messages.filter((m) => !seen.has(m.id)), ...prev];
+        });
+        setHasEarlier(Boolean(data.hasEarlier));
+        requestAnimationFrame(() => {
+          if (el) el.scrollTop += el.scrollHeight - prevHeight;
+        });
+      }
+    } finally {
+      setLoadingEarlier(false);
+    }
+  }
+
+  /** Submit the post-resolve CSAT. */
+  async function submitCsat() {
+    if (!rateable || csat.rating == null || sending) return;
+    setSending(true);
+    const result = await rateTicket(rateable.id, csat.rating, csat.comment || undefined);
+    if (result.ok) {
+      setCsat((c) => ({ ...c, done: true }));
+      setRateable(null);
+    } else {
+      setError(result.error || "Couldn't save your rating.");
+    }
+    setSending(false);
+  }
 
   useEffect(() => {
     if (prefill) setInput(prefill);
@@ -104,6 +183,7 @@ export default function ChatConversation({
   }, [prefill, prefillNonce]);
 
   async function runAction(action: () => Promise<{ ok: boolean; error?: string }>) {
+    bumpActivity();
     setSending(true);
     setError(null);
     const result = await action();
@@ -170,10 +250,24 @@ export default function ChatConversation({
 
   const listContent = (
     <>
-      {/* Greeting (not persisted) */}
-      <Bubble sender="BOT">
-        {`👋 Welcome to ${storeConfig.name}. Pick a topic below or type a question — and you can ask for an agent anytime.`}
-      </Bubble>
+      {hasEarlier && (
+        <div className="flex justify-center pb-1">
+          <button
+            type="button"
+            onClick={() => void loadEarlier()}
+            disabled={loadingEarlier}
+            className="chip transition-colors hover:bg-surface disabled:opacity-50"
+          >
+            {loadingEarlier ? "Loading…" : "Load earlier messages"}
+          </button>
+        </div>
+      )}
+      {/* Greeting (not persisted) — only at the true start of the thread */}
+      {!hasEarlier && (
+        <Bubble sender="BOT">
+          {`👋 Welcome to ${storeConfig.name}. Pick a topic below or type a question — and you can ask for an agent anytime.`}
+        </Bubble>
+      )}
       {messages.map((m) => (
         <Bubble key={m.id} sender={m.sender} at={m.createdAt}>
           {m.body}
@@ -194,6 +288,68 @@ export default function ChatConversation({
           ))}
         </div>
       )}
+      {/* Post-resolve CSAT */}
+      {(rateable || csat.done) && (
+        <div
+          className="mt-1 rounded-2xl border p-3.5 text-sm"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {csat.done ? (
+            <p className="text-muted">Thanks for the feedback — it helps us improve.</p>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              <p className="font-medium">How did we do on {rateable!.number}?</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  aria-label="Thumbs up"
+                  onClick={() => setCsat((c) => ({ ...c, rating: 5 }))}
+                  className="chip transition-colors disabled:opacity-50"
+                  style={
+                    csat.rating === 5
+                      ? { background: "var(--brand-soft)", borderColor: "var(--brand)", color: "var(--brand)" }
+                      : undefined
+                  }
+                >
+                  <ThumbsUp className="h-4 w-4" /> Great
+                </button>
+                <button
+                  type="button"
+                  aria-label="Thumbs down"
+                  onClick={() => setCsat((c) => ({ ...c, rating: 1 }))}
+                  className="chip transition-colors disabled:opacity-50"
+                  style={
+                    csat.rating === 1
+                      ? { background: "var(--brand-soft)", borderColor: "var(--brand)", color: "var(--brand)" }
+                      : undefined
+                  }
+                >
+                  <ThumbsDown className="h-4 w-4" /> Not great
+                </button>
+              </div>
+              {csat.rating != null && (
+                <div className="flex items-center gap-2">
+                  <input
+                    value={csat.comment}
+                    onChange={(e) => setCsat((c) => ({ ...c, comment: e.target.value }))}
+                    placeholder="Anything to add? (optional)"
+                    maxLength={500}
+                    className="input-field flex-1 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void submitCsat()}
+                    disabled={sending}
+                    className="btn-primary px-3 py-2 text-xs"
+                  >
+                    Send
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 
@@ -201,7 +357,10 @@ export default function ChatConversation({
     <div className="flex items-center gap-2">
       <input
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => {
+          setInput(e.target.value);
+          bumpActivity();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();

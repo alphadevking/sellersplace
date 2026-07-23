@@ -293,6 +293,10 @@ model Ticket {
   number         String       @unique
   conversationId String
   status         TicketStatus @default(OPEN)
+  /// CSAT, collected after resolution: 5 = thumbs-up, 1 = thumbs-down
+  /// (int-scaled so a 1–5 star upgrade needs no migration).
+  rating         Int?
+  ratingComment  String?
   openedAt       DateTime     @default(now())
   resolvedAt     DateTime?
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

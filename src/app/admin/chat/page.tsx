@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Headset } from "lucide-react";
+import { Headset, ThumbsDown, ThumbsUp } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
 import { getAdminInbox } from "@/lib/chat";
 
@@ -71,11 +71,19 @@ export default async function AdminChatPage() {
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {ticket && style && (
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                      style={{ background: style.bg, color: style.fg }}
-                    >
-                      {ticket.number} · {style.label}
+                    <span className="flex items-center gap-1.5">
+                      {ticket.rating != null &&
+                        (ticket.rating >= 3 ? (
+                          <ThumbsUp className="h-3.5 w-3.5" style={{ color: "#16a34a" }} aria-label="Rated positive" />
+                        ) : (
+                          <ThumbsDown className="h-3.5 w-3.5" style={{ color: "#dc2626" }} aria-label="Rated negative" />
+                        ))}
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                        style={{ background: style.bg, color: style.fg }}
+                      >
+                        {ticket.number} · {style.label}
+                      </span>
                     </span>
                   )}
                   <span className="text-[11px] text-muted">

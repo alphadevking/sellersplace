@@ -4,13 +4,30 @@ import { prisma } from "@/lib/prisma";
 import {
   getCustomerUnreadCount,
   getMessagesAfter,
+  getMessagePage,
   getOpenTicket,
+  getRateableTicket,
 } from "@/lib/chat";
 
+type ChatMessageRow = Awaited<ReturnType<typeof getMessagesAfter>>[number];
+
+function serialize(m: ChatMessageRow) {
+  return {
+    id: m.id,
+    sender: m.sender,
+    body: m.body,
+    createdAt: m.createdAt.toISOString(),
+  };
+}
+
 /**
- * Poll endpoint for the support chat. Customers get their own thread;
- * ADMIN/STAFF may pass ?conversationId= to read any thread (admin inbox).
- * Query: ?after=<ISO timestamp> returns only newer messages.
+ * Support-chat read endpoint. Customers get their own thread; ADMIN/STAFF may
+ * pass ?conversationId= to read any thread (admin inbox).
+ *
+ * Modes:
+ *   (none)          latest page of history + hasEarlier flag
+ *   ?after=<ISO>    live poll — only newer messages
+ *   ?before=<ISO>   older page for "Load earlier" + hasEarlier flag
  */
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -19,6 +36,7 @@ export async function GET(req: NextRequest) {
   }
 
   const after = req.nextUrl.searchParams.get("after") || undefined;
+  const before = req.nextUrl.searchParams.get("before") || undefined;
   const requestedId = req.nextUrl.searchParams.get("conversationId");
   const isStaff = session.user.role === "ADMIN" || session.user.role === "STAFF";
 
@@ -34,23 +52,42 @@ export async function GET(req: NextRequest) {
   }
 
   if (!conversationId) {
-    return NextResponse.json({ messages: [], unread: 0, ticket: null });
+    return NextResponse.json({
+      messages: [],
+      unread: 0,
+      ticket: null,
+      rateable: null,
+      hasEarlier: false,
+    });
   }
 
-  const [messages, ticket, unread] = await Promise.all([
-    getMessagesAfter(conversationId, after),
+  // Older page for "Load earlier" — no unread/ticket bookkeeping needed.
+  if (before) {
+    const page = await getMessagePage(conversationId, before);
+    return NextResponse.json({
+      messages: page.messages.map(serialize),
+      hasEarlier: page.hasEarlier,
+    });
+  }
+
+  const isCustomerView = !(requestedId && isStaff);
+  const [batch, ticket, rateable, unread] = await Promise.all([
+    after
+      ? getMessagesAfter(conversationId, after).then((messages) => ({
+          messages,
+          hasEarlier: undefined as boolean | undefined,
+        }))
+      : getMessagePage(conversationId),
     getOpenTicket(conversationId),
-    requestedId && isStaff ? Promise.resolve(0) : getCustomerUnreadCount(session.user.id),
+    isCustomerView ? getRateableTicket(conversationId) : Promise.resolve(null),
+    isCustomerView ? getCustomerUnreadCount(session.user.id) : Promise.resolve(0),
   ]);
 
   return NextResponse.json({
-    messages: messages.map((m) => ({
-      id: m.id,
-      sender: m.sender,
-      body: m.body,
-      createdAt: m.createdAt.toISOString(),
-    })),
+    messages: batch.messages.map(serialize),
     unread,
     ticket: ticket ? { number: ticket.number, status: ticket.status } : null,
+    rateable: rateable ? { id: rateable.id, number: rateable.number } : null,
+    hasEarlier: batch.hasEarlier ?? undefined,
   });
 }

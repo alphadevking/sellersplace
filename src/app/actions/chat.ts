@@ -180,6 +180,36 @@ export async function requestAgent(): Promise<SendResult> {
   return { ok: true };
 }
 
+/**
+ * Post-resolve CSAT: 5 = thumbs-up, 1 = thumbs-down. One rating per ticket,
+ * only by the ticket's own customer, only after resolution.
+ */
+export async function rateTicket(
+  ticketId: string,
+  rating: number,
+  comment?: string
+): Promise<SendResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Sign in first." };
+  if (rating !== 1 && rating !== 5) return { ok: false, error: "Invalid rating." };
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { conversation: { select: { userId: true } } },
+  });
+  if (!ticket || ticket.conversation.userId !== session.user.id) {
+    return { ok: false, error: "Ticket not found." };
+  }
+  if (ticket.status !== "RESOLVED") return { ok: false, error: "Ticket isn't resolved yet." };
+  if (ticket.rating != null) return { ok: false, error: "Already rated — thank you!" };
+
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { rating, ratingComment: comment?.trim().slice(0, 500) || null },
+  });
+  return { ok: true };
+}
+
 /** Mark everything as read for the customer (called when the panel is open). */
 export async function markChatRead(): Promise<void> {
   const session = await auth();
