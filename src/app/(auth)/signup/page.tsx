@@ -125,6 +125,7 @@ export default function SignupPage() {
                 onChange={(password) => setForm({ ...form, password })}
                 minLength={8}
                 autoComplete="new-password"
+                generate
               />
               <span className="text-[11px] text-muted">At least 8 characters.</span>
             </label>

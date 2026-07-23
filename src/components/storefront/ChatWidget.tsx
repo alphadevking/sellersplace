@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageCircle, X, Headset, Maximize2 } from "lucide-react";
+import { X, Headset, Maximize2 } from "lucide-react";
 import { storeConfig } from "@/config/store";
 import ChatConversation from "@/components/storefront/ChatConversation";
 import CountBadge from "@/components/storefront/CountBadge";
@@ -78,7 +78,7 @@ export default function ChatWidget({ signedIn }: { signedIn: boolean }) {
         aria-label={open ? "Close support chat" : "Chat with support"}
         className="btn-primary fixed bottom-20 right-4 z-50 flex items-center gap-2 rounded-full px-4 py-3 shadow-lg md:bottom-6 md:right-6 [margin-bottom:env(safe-area-inset-bottom)]"
       >
-        {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+        {open ? <X className="h-5 w-5" /> : <Headset className="h-5 w-5" />}
         <span className="hidden text-sm font-medium sm:inline">Support</span>
         {!open && <CountBadge count={unread} />}
       </button>

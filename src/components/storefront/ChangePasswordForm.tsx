@@ -57,7 +57,7 @@ export default function ChangePasswordForm() {
         </label>
         <label className="field-label">
           New password
-          <PasswordInput value={next} onChange={setNext} minLength={8} autoComplete="new-password" />
+          <PasswordInput value={next} onChange={setNext} minLength={8} autoComplete="new-password" generate />
           <span className="text-[11px] text-muted">At least 8 characters.</span>
         </label>
         <label className="field-label">
