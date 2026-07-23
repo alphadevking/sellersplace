@@ -74,7 +74,7 @@ const identityJsonLd = {
       "@id": `${storeConfig.siteUrl}/#organization`,
       name: storeConfig.name,
       url: storeConfig.siteUrl,
-      logo: storeConfig.logoUrl || `${storeConfig.siteUrl}/icons/icon-512.png`,
+      logo: storeConfig.logoUrl || `${storeConfig.siteUrl}/pwa-icon/512`,
       ...(storeConfig.phone ? { telephone: storeConfig.phone } : {}),
     },
     {

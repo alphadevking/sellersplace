@@ -11,21 +11,22 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: storeConfig.backgroundColor,
     theme_color: storeConfig.primaryColor,
     orientation: "any",
+    // Generated from env config (logo or letter mark) — see app/pwa-icon.
     icons: [
       {
-        src: "/icons/icon-192.png",
+        src: "/pwa-icon/192",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-512.png",
+        src: "/pwa-icon/512",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-maskable-512.png",
+        src: "/pwa-icon/maskable",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

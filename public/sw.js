@@ -1,7 +1,7 @@
 // SellerSpace Service Worker
 // Handles: app shell caching for offline/installable support, and web push notifications.
 
-const CACHE_NAME = "sellerspace-shell-v2";
+const CACHE_NAME = "sellerspace-shell-v3";
 const APP_SHELL = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -57,8 +57,9 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "Order update";
   const options = {
     body: payload.body || "",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    // Generated from env config (logo or letter mark) — see app/pwa-icon.
+    icon: "/pwa-icon/192",
+    badge: "/pwa-icon/192",
     data: { url: payload.url || "/" },
   };
 
