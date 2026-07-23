@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { storeConfig } from "@/config/store";
+import { ogSized } from "@/lib/og-image";
 import { getProductBySlug } from "@/lib/products";
 import { productHref } from "@/lib/product-url";
 
@@ -22,6 +23,14 @@ export async function offeringMetadata(
     product.description?.slice(0, 160) ||
     `${product.name}${product.brand ? ` by ${product.brand}` : ""} — available at ${storeConfig.name}.`;
   const images = (product.images ?? []).slice(0, 4);
+  // Lead image at exact card dimensions so WhatsApp/X/FB render a fast,
+  // correctly cropped preview; the rest ride along at native size.
+  const ogImages = images.length
+    ? [
+        { url: ogSized(images[0], 1200, 630), width: 1200, height: 630, alt: product.name },
+        ...images.slice(1),
+      ]
+    : [];
 
   return {
     title: product.name,
@@ -33,13 +42,13 @@ export async function offeringMetadata(
       description,
       url: path,
       siteName: storeConfig.name,
-      ...(images.length ? { images } : {}),
+      ...(ogImages.length ? { images: ogImages } : {}),
     },
     twitter: {
       card: images.length ? "summary_large_image" : "summary",
       title: product.name,
       description,
-      ...(images.length ? { images: [images[0]] } : {}),
+      ...(images.length ? { images: [ogSized(images[0], 1200, 630)] } : {}),
     },
   };
 }
