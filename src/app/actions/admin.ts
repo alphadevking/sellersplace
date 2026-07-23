@@ -14,6 +14,7 @@ import {
 import { getAdminSession, requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { updateOrderStatus } from "@/lib/orders";
+import { deleteUserAccount } from "@/lib/user-deletion";
 import { uploadImage } from "@/lib/cloudinary";
 import { productHref } from "@/lib/product-url";
 
@@ -296,6 +297,31 @@ export async function setInquiryStatus(formData: FormData) {
   await prisma.inquiry.update({ where: { id }, data: { status: status as InquiryStatus } });
 
   revalidatePath("/admin/inquiries");
+  revalidatePath("/admin");
+}
+
+/**
+ * Deletes a customer for an NDPR erasure request: removes personal data
+ * (anonymizing if orders must be retained). Restricted to CUSTOMER accounts so
+ * admins/staff can't be removed through this path.
+ */
+export async function deleteCustomer(formData: FormData) {
+  await requireAdmin();
+
+  const userId = formData.get("userId") as string;
+  if (!userId) throw new Error("Missing user id");
+
+  const target = await prisma.user.findUnique({ where: { id: userId } });
+  if (!target) throw new Error("Customer not found");
+  if (target.role !== "CUSTOMER") {
+    throw new Error("Only customer accounts can be deleted here");
+  }
+
+  // Admin is the data controller — allowed to override the obligation blockers
+  // that gate self-serve deletion (e.g. resolving a genuine erasure request).
+  await deleteUserAccount(userId, { force: true });
+
+  revalidatePath("/admin/customers");
   revalidatePath("/admin");
 }
 

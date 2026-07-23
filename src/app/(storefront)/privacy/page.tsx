@@ -144,6 +144,13 @@ export default function PrivacyPage() {
           ) : null}
           . We respond within the timelines the NDPA requires.
         </p>
+        <p>
+          Erasure is not absolute: where we have an ongoing order with you, an
+          unpaid balance, or a legal or accounting obligation to keep certain
+          records, deletion of the affected data may be deferred until those are
+          resolved, as the NDPA permits. In those cases we delete what we can and
+          remove the rest once retention is no longer required.
+        </p>
       </Section>
 
       <Section title="7. Security">

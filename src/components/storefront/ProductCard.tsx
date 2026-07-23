@@ -29,9 +29,13 @@ export type ProductCardData = {
 export default function ProductCard({
   product,
   wishlisted,
+  priority,
 }: {
   product: ProductCardData;
   wishlisted?: boolean;
+  /** Eager-load this card's image — set only on the first (above-the-fold) row
+   *  so the LCP image preloads; never on every card, which floods the network. */
+  priority?: boolean;
 }) {
   const image = product.images?.[0];
   const price = Number(product.price);
@@ -62,6 +66,7 @@ export default function ProductCard({
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 18vw"
+            priority={priority}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

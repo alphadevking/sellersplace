@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
+import DeleteCustomerButton from "@/components/admin/DeleteCustomerButton";
 
 export const metadata = { title: "Customers" };
 
@@ -46,11 +47,18 @@ export default async function AdminCustomersPage() {
                     {customer.phone ? ` · ${customer.phone}` : ""}
                   </span>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-0.5">
-                  <span className="text-sm font-semibold">{formatCurrency(spent)}</span>
-                  <span className="text-xs text-muted">
-                    {customer._count.orders} order{customer._count.orders !== 1 ? "s" : ""}
-                  </span>
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-sm font-semibold">{formatCurrency(spent)}</span>
+                    <span className="text-xs text-muted">
+                      {customer._count.orders} order{customer._count.orders !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <DeleteCustomerButton
+                    userId={customer.id}
+                    label={customer.name || customer.email}
+                    hasOrders={customer._count.orders > 0}
+                  />
                 </div>
               </div>
             );

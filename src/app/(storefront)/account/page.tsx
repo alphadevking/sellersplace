@@ -9,8 +9,10 @@ import { terms } from "@/config/store";
 import SmartImage from "@/components/SmartImage";
 import { OrderStatusBadge } from "@/components/StatusBadge";
 import ChangePasswordForm from "@/components/storefront/ChangePasswordForm";
+import DeleteAccountForm from "@/components/storefront/DeleteAccountForm";
 import SignOutButton from "@/components/storefront/SignOutButton";
 import ReorderButton from "@/components/storefront/ReorderButton";
+import { getDeletionBlockers } from "@/lib/user-deletion";
 
 export const metadata = { title: "My account", robots: { index: false, follow: false } };
 
@@ -24,11 +26,16 @@ function initials(name: string | null, email: string) {
   return letters.toUpperCase();
 }
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deleteError?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account");
+  const { deleteError } = await searchParams;
 
-  const [user, orders, wishlistCount] = await Promise.all([
+  const [user, orders, wishlistCount, deletionBlockers] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
     prisma.order.findMany({
       where: { userId: session.user.id },
@@ -36,6 +43,7 @@ export default async function AccountPage() {
       include: { items: { include: { product: true } } },
     }),
     prisma.wishlistItem.count({ where: { userId: session.user.id } }),
+    getDeletionBlockers(session.user.id),
   ]);
 
   const totalSpent = orders.reduce((sum, o) => sum + Number(o.amountPaid), 0);
@@ -199,6 +207,12 @@ export default async function AccountPage() {
       </div>
 
       <SignOutButton />
+
+      <DeleteAccountForm
+        hasPassword={!!user.passwordHash}
+        passwordError={deleteError === "password"}
+        blockers={deletionBlockers.map((b) => b.message)}
+      />
     </div>
   );
 }
