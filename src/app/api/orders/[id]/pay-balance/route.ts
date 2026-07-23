@@ -10,17 +10,25 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Sign in to pay" }, { status: 401 });
-    }
+    const token = req.nextUrl.searchParams.get("t");
 
     const order = await prisma.order.findUnique({
       where: { id },
       include: { user: true },
     });
-    if (!order || order.userId !== session.user.id) {
+    if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Owner session, or the guest-checkout access token from the order URL.
+    const session = await auth();
+    const isOwner = !!session?.user && order.userId === session.user.id;
+    const hasToken = !!token && !!order.accessToken && order.accessToken === token;
+    if (!isOwner && !hasToken) {
+      return NextResponse.json(
+        { error: session?.user ? "Order not found" : "Sign in to pay" },
+        { status: session?.user ? 404 : 401 }
+      );
     }
 
     const balance = balanceDue(order);
@@ -32,7 +40,7 @@ export async function POST(
       order,
       amount: balance,
       kind: order.isInvoice ? "INVOICE" : "BALANCE",
-      callbackUrl: `${req.nextUrl.origin}/orders/${order.id}`,
+      callbackUrl: `${req.nextUrl.origin}/orders/${order.id}${hasToken ? `?t=${token}` : ""}`,
     });
 
     return NextResponse.json({ authorizationUrl });

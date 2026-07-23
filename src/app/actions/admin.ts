@@ -37,15 +37,56 @@ export async function uploadProductImage(formData: FormData): Promise<{ url: str
   }
 }
 
+/** Fulfilment sequence used to detect backward (correction-only) moves. */
+const STATUS_ORDER: OrderStatus[] = [
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+];
+
 export async function setOrderStatus(formData: FormData) {
   await requireAdmin();
 
   const orderId = formData.get("orderId") as string;
   const status = formData.get("status") as string;
   const note = (formData.get("note") as string)?.trim();
+  const force = formData.get("force") === "on";
 
   if (!orderId || !Object.values(OrderStatus).includes(status as OrderStatus)) {
     throw new Error("Invalid order status update");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: { include: { product: true } } },
+  });
+  if (!order) throw new Error("Order not found");
+
+  if (order.status === status) {
+    redirect(`/admin/orders/${orderId}?statusError=same`);
+  }
+
+  // Guard: shipping a physical order without tracking info leaves the customer
+  // with nothing to follow — save tracking first (or tick the override).
+  const hasPhysical = order.items.some((i) => i.product && i.product.offeringType !== "SERVICE");
+  if (
+    status === "SHIPPED" &&
+    hasPhysical &&
+    !order.carrier &&
+    !order.trackingNumber &&
+    !force
+  ) {
+    redirect(`/admin/orders/${orderId}?statusError=tracking`);
+  }
+
+  // Guard: backward moves (e.g. DELIVERED → PROCESSING) are corrections, not
+  // normal flow — they notify the customer again, so require the override.
+  const fromIdx = STATUS_ORDER.indexOf(order.status);
+  const toIdx = STATUS_ORDER.indexOf(status as OrderStatus);
+  if (fromIdx !== -1 && toIdx !== -1 && toIdx < fromIdx && !force) {
+    redirect(`/admin/orders/${orderId}?statusError=backward`);
   }
 
   await updateOrderStatus(orderId, status as OrderStatus, note || undefined);
@@ -53,6 +94,37 @@ export async function setOrderStatus(formData: FormData) {
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
+}
+
+/**
+ * Marks a cancelled-but-paid order as refunded once the money has been
+ * returned (Paystack dashboard/bank transfer). Customer sees the refund state
+ * on their order page.
+ */
+export async function markOrderRefunded(formData: FormData) {
+  await requireAdmin();
+
+  const orderId = formData.get("orderId") as string;
+  if (!orderId) throw new Error("Missing order id");
+
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error("Order not found");
+  if (order.status !== "CANCELLED" || Number(order.amountPaid) <= 0) {
+    throw new Error("Only cancelled, paid orders can be marked refunded");
+  }
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      paymentStatus: "REFUNDED",
+      statusHistory: {
+        create: { status: "CANCELLED", note: "Refund issued to customer" },
+      },
+    },
+  });
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath(`/orders/${orderId}`);
 }
 
 type InvoiceLine = { title: string; quantity: number; unitPrice: number };
@@ -129,7 +201,22 @@ export async function createInvoice(formData: FormData) {
   redirect(`/admin/orders/${order.id}`);
 }
 
-/** Shipment tracking details, set at (or before) dispatch. */
+/** Validates an http(s) tracking URL from a form; null when blank. */
+function parseTrackingUrl(raw: string | undefined): string | null {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("bad protocol");
+    }
+    return parsed.toString();
+  } catch {
+    throw new Error("Tracking link must be a valid http(s) URL");
+  }
+}
+
+/** Shipment tracking details, editable after dispatch. */
 export async function setOrderTracking(formData: FormData) {
   await requireAdmin();
 
@@ -138,19 +225,7 @@ export async function setOrderTracking(formData: FormData) {
 
   const carrier = (formData.get("carrier") as string)?.trim() || null;
   const trackingNumber = (formData.get("trackingNumber") as string)?.trim() || null;
-  const trackingUrlRaw = (formData.get("trackingUrl") as string)?.trim();
-  let trackingUrl: string | null = null;
-  if (trackingUrlRaw) {
-    try {
-      const parsed = new URL(trackingUrlRaw);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        throw new Error("bad protocol");
-      }
-      trackingUrl = parsed.toString();
-    } catch {
-      throw new Error("Tracking link must be a valid http(s) URL");
-    }
-  }
+  const trackingUrl = parseTrackingUrl(formData.get("trackingUrl") as string);
 
   await prisma.order.update({
     where: { id: orderId },
@@ -159,6 +234,54 @@ export async function setOrderTracking(formData: FormData) {
 
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath(`/orders/${orderId}`);
+}
+
+/**
+ * The dispatch step as one action: captures carrier/tracking and marks the
+ * order SHIPPED together, so the customer's "on its way" notification never
+ * goes out without something to follow. Physical orders require a carrier or
+ * tracking number; service-only orders ship without.
+ */
+export async function shipOrder(formData: FormData) {
+  await requireAdmin();
+
+  const orderId = formData.get("orderId") as string;
+  if (!orderId) throw new Error("Missing order id");
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: { include: { product: true } } },
+  });
+  if (!order) throw new Error("Order not found");
+  if (order.status !== "CONFIRMED" && order.status !== "PROCESSING") {
+    redirect(`/admin/orders/${orderId}?statusError=notready`);
+  }
+
+  const carrier = (formData.get("carrier") as string)?.trim() || null;
+  const trackingNumber = (formData.get("trackingNumber") as string)?.trim() || null;
+  const trackingUrl = parseTrackingUrl(formData.get("trackingUrl") as string);
+
+  const hasPhysical = order.items.some((i) => i.product && i.product.offeringType !== "SERVICE");
+  if (hasPhysical && !carrier && !trackingNumber) {
+    redirect(`/admin/orders/${orderId}?statusError=tracking`);
+  }
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { carrier, trackingNumber, trackingUrl },
+  });
+
+  const note = (formData.get("note") as string)?.trim();
+  await updateOrderStatus(
+    orderId,
+    "SHIPPED",
+    note || (carrier ? `Dispatched via ${carrier}` : undefined)
+  );
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
 }
 
 export async function setInquiryStatus(formData: FormData) {

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import type { Order, PaymentKind, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { initializePaystackTransaction } from "@/lib/paystack";
+import { initializePaystackTransaction, verifyPaystackTransaction } from "@/lib/paystack";
 import { adjustOrderStock } from "@/lib/orders";
 
 /** Naira balance still owed on an order. */
@@ -83,4 +83,36 @@ export async function applySuccessfulCharge(reference: string) {
         : {}),
     },
   });
+}
+
+/**
+ * Verify-on-return: when a customer lands back from Paystack, don't make them
+ * wait for the webhook (which may be delayed — or absent in local dev).
+ * Verifies any still-PENDING charges for the order against Paystack and
+ * applies the successful ones. Idempotent with the webhook: whichever runs
+ * first wins, the other no-ops. Returns true when anything was applied.
+ */
+export async function reconcilePendingPayments(orderId: string): Promise<boolean> {
+  const pending = await prisma.payment.findMany({
+    where: { orderId, status: "PENDING" },
+    orderBy: { createdAt: "desc" },
+    // Only recent attempts are worth a Paystack round-trip on page load.
+    take: 3,
+  });
+
+  let applied = false;
+  for (const payment of pending) {
+    try {
+      const res = await verifyPaystackTransaction(payment.reference);
+      if (res.data?.status === "success") {
+        applied = (await applySuccessfulCharge(payment.reference)) !== null || applied;
+      }
+    } catch {
+      // Verification is best-effort — the webhook remains the source of truth.
+      // A network failure here means the remaining verifies will fail the same
+      // way, so stop rather than stacking timeouts onto the page load.
+      break;
+    }
+  }
+  return applied;
 }

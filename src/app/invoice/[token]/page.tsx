@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
@@ -5,7 +6,26 @@ import { balanceDue } from "@/lib/payments";
 import { storeConfig } from "@/config/store";
 import PayBalanceButton from "@/components/storefront/PayBalanceButton";
 
-export const metadata = { title: "Invoice", robots: { index: false, follow: false } };
+// cache() dedupes the lookup between generateMetadata and the page render.
+const getInvoiceOrder = cache((token: string) =>
+  prisma.order.findUnique({
+    where: { accessToken: token },
+    include: { items: { include: { product: true } }, user: true },
+  })
+);
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+  const order = await getInvoiceOrder(token);
+  return {
+    title: order ? `Invoice ${order.orderNumber}` : "Invoice",
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Tokenized public invoice page — reachable only via the unguessable link the
@@ -17,10 +37,7 @@ export default async function InvoicePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const order = await prisma.order.findUnique({
-    where: { accessToken: token },
-    include: { items: { include: { product: true } }, user: true },
-  });
+  const order = await getInvoiceOrder(token);
   if (!order) notFound();
 
   const balance = balanceDue(order);

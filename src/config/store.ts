@@ -56,7 +56,20 @@ export const storeConfig = {
     process.env.NEXT_PUBLIC_STORE_HERO_VIDEO ||
     "https://videos.pexels.com/video-files/4517768/4517768-hd_1920_1080_30fps.mp4",
   heroCtaHref: process.env.NEXT_PUBLIC_STORE_HERO_HREF || "/products",
+  /**
+   * Delivery promise as "min-max" business days after payment confirmation,
+   * e.g. "2-5". Drives the estimated-delivery window on order tracking.
+   */
+  deliveryEtaDays: parseEtaDays(process.env.NEXT_PUBLIC_DELIVERY_ETA_DAYS, [2, 5]),
 } as const;
+
+function parseEtaDays(raw: string | undefined, fallback: [number, number]): [number, number] {
+  const m = raw?.trim().match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
+  if (!m) return fallback;
+  const min = Number(m[1]);
+  const max = Number(m[2]);
+  return min >= 1 && max >= min ? [min, max] : fallback;
+}
 
 /** wa.me deep link with a prefilled message; empty string when WhatsApp isn't configured. */
 export function whatsappLink(message: string): string {

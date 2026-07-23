@@ -1,6 +1,7 @@
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendOrderStatusPush } from "@/lib/push";
+import { storeConfig } from "@/config/store";
 
 const STATUS_MESSAGES: Partial<Record<OrderStatus, string>> = {
   CONFIRMED: "Your order has been confirmed.",
@@ -54,6 +55,27 @@ export async function adjustOrderStock(orderId: string, direction: "decrement" |
     })
   );
   await prisma.$transaction(updates);
+}
+
+/**
+ * Estimated-delivery window from the delivery promise (business days, skipping
+ * weekends) counted from when payment confirmed the order. Null for orders
+ * that aren't in a promisable state.
+ */
+export function estimatedDeliveryWindow(confirmedAt: Date): { from: Date; to: Date } {
+  const [min, max] = storeConfig.deliveryEtaDays;
+  return { from: addBusinessDays(confirmedAt, min), to: addBusinessDays(confirmedAt, max) };
+}
+
+function addBusinessDays(start: Date, days: number): Date {
+  const d = new Date(start);
+  let remaining = days;
+  while (remaining > 0) {
+    d.setDate(d.getDate() + 1);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) remaining--;
+  }
+  return d;
 }
 
 /** Statuses that mean the order is genuinely in fulfilment (stock committed). */

@@ -1,20 +1,23 @@
 import { notFound } from "next/navigation";
-import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
-import { setOrderStatus, setOrderTracking } from "@/app/actions/admin";
+import { markOrderRefunded } from "@/app/actions/admin";
+import { storeConfig } from "@/config/store";
+import CopyLinkField from "@/components/admin/CopyLinkField";
+import OrderFulfilment from "@/components/admin/OrderFulfilment";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/StatusBadge";
 
 export const metadata = { title: "Order" };
 
-const STATUS_OPTIONS = Object.values(OrderStatus);
-
 export default async function AdminOrderDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ statusError?: string }>;
 }) {
   const { id } = await params;
+  const { statusError } = await searchParams;
 
   const order = await prisma.order.findUnique({
     where: { id },
@@ -101,15 +104,22 @@ export default async function AdminOrderDetailPage({
           </section>
 
           {order.accessToken && (
-            <section className="card flex flex-col gap-1.5 p-4 text-sm">
-              <h2 className="text-sm font-semibold">Invoice pay link</h2>
+            <section className="card flex flex-col gap-2 p-4 text-sm">
+              <h2 className="text-sm font-semibold">
+                {order.isInvoice ? "Invoice pay link" : "Customer order link"}
+              </h2>
               <p className="text-xs text-muted">
-                Share this private link with the customer — they can view and pay without an
-                account.
+                {order.isInvoice
+                  ? "Share this private link with the customer — they can view and pay without an account."
+                  : "This guest checkout has no account — this private link is how the customer views and tracks the order."}
               </p>
-              <code className="card-surface break-all rounded-lg p-2.5 text-xs">
-                /invoice/{order.accessToken}
-              </code>
+              <CopyLinkField
+                url={
+                  order.isInvoice
+                    ? `${storeConfig.siteUrl}/invoice/${order.accessToken}`
+                    : `${storeConfig.siteUrl}/orders/${order.id}?t=${order.accessToken}`
+                }
+              />
             </section>
           )}
 
@@ -158,77 +168,32 @@ export default async function AdminOrderDetailPage({
         </div>
 
         <div className="flex flex-col gap-4">
-          <section className="card flex flex-col gap-3 p-4">
-            <h2 className="text-sm font-semibold">Update status</h2>
-            <form action={setOrderStatus} className="flex flex-col gap-3">
-              <input type="hidden" name="orderId" value={order.id} />
-              <label className="field-label">
-                Status
-                <select name="status" defaultValue={order.status} className="input-field">
-                  {STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {status.charAt(0) + status.slice(1).toLowerCase()}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field-label">
-                Note (optional)
-                <input
-                  name="note"
-                  placeholder="e.g. Dispatched via GIG Logistics"
-                  className="input-field"
-                />
-              </label>
-              <button type="submit" className="btn-primary">
-                Update status
-              </button>
-              <p className="text-[11px] text-muted">
-                The customer gets a push notification for each status change.
-              </p>
-            </form>
-          </section>
+          <OrderFulfilment
+            order={order}
+            hasPhysical={order.items.some(
+              (i) => i.product && i.product.offeringType !== "SERVICE"
+            )}
+            statusError={statusError}
+          />
 
-          <section className="card flex flex-col gap-3 p-4">
-            <h2 className="text-sm font-semibold">Shipment tracking</h2>
-            <form action={setOrderTracking} className="flex flex-col gap-3">
-              <input type="hidden" name="orderId" value={order.id} />
-              <label className="field-label">
-                Carrier
-                <input
-                  name="carrier"
-                  defaultValue={order.carrier ?? ""}
-                  placeholder="e.g. GIG Logistics"
-                  className="input-field"
-                />
-              </label>
-              <label className="field-label">
-                Tracking number
-                <input
-                  name="trackingNumber"
-                  defaultValue={order.trackingNumber ?? ""}
-                  placeholder="e.g. GIGL-2049-XYZ"
-                  className="input-field"
-                />
-              </label>
-              <label className="field-label">
-                Tracking link (optional)
-                <input
-                  name="trackingUrl"
-                  type="url"
-                  defaultValue={order.trackingUrl ?? ""}
-                  placeholder="https://…"
-                  className="input-field"
-                />
-              </label>
-              <button type="submit" className="btn-outline">
-                Save tracking
-              </button>
-              <p className="text-[11px] text-muted">
-                Shown to the customer on their order page once saved.
-              </p>
-            </form>
-          </section>
+          {order.status === "CANCELLED" &&
+            Number(order.amountPaid) > 0 &&
+            order.paymentStatus !== "REFUNDED" && (
+              <section className="card flex flex-col gap-2.5 p-4">
+                <h2 className="text-sm font-semibold">Refund owed</h2>
+                <p className="text-xs text-muted">
+                  This cancelled order has {formatCurrency(Number(order.amountPaid))} paid.
+                  Refund via Paystack/bank, then record it here — the customer sees the
+                  refund state on their order page.
+                </p>
+                <form action={markOrderRefunded}>
+                  <input type="hidden" name="orderId" value={order.id} />
+                  <button type="submit" className="btn-outline w-full">
+                    Mark as refunded
+                  </button>
+                </form>
+              </section>
+            )}
 
           <section className="card flex flex-col gap-3 p-4">
             <h2 className="text-sm font-semibold">Status history</h2>

@@ -21,6 +21,8 @@ export async function initializePaystackTransaction(params: {
 }) {
   const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
     method: "POST",
+    // Fail fast when Paystack is unreachable instead of hanging the checkout.
+    signal: AbortSignal.timeout(15_000),
     headers: {
       Authorization: `Bearer ${getSecretKey()}`,
       "Content-Type": "application/json",
@@ -49,7 +51,12 @@ export async function initializePaystackTransaction(params: {
 export async function verifyPaystackTransaction(reference: string) {
   const res = await fetch(
     `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
-    { headers: { Authorization: `Bearer ${getSecretKey()}` } }
+    {
+      headers: { Authorization: `Bearer ${getSecretKey()}` },
+      // Verify runs on order-page load (verify-on-return) — a down Paystack
+      // must cost seconds, not hang the page; the webhook remains the backstop.
+      signal: AbortSignal.timeout(5_000),
+    }
   );
 
   if (!res.ok) {

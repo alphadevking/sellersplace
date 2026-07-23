@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
@@ -139,9 +140,14 @@ export async function POST(req: NextRequest) {
 
     const parsedServiceDate = serviceDate ? new Date(serviceDate) : null;
 
+    // Guests have no password, so a session can never get them back to this
+    // order — an unguessable token (same pattern as invoices) is their key.
+    const accessToken = session?.user ? null : crypto.randomBytes(24).toString("hex");
+
     const order = await prisma.order.create({
       data: {
         orderNumber,
+        accessToken,
         userId: user.id,
         addressId: address?.id,
         serviceDate:
@@ -179,10 +185,14 @@ export async function POST(req: NextRequest) {
       order: { ...order, user: { email } },
       amount: roundedCharge,
       kind: isDeposit ? "DEPOSIT" : "FULL",
-      callbackUrl: `${req.nextUrl.origin}/orders/${order.id}`,
+      callbackUrl: `${req.nextUrl.origin}/orders/${order.id}${accessToken ? `?t=${accessToken}` : ""}`,
     });
 
-    return NextResponse.json({ orderId: order.id, authorizationUrl });
+    return NextResponse.json({
+      orderId: order.id,
+      authorizationUrl,
+      orderUrl: `/orders/${order.id}${accessToken ? `?t=${accessToken}` : ""}`,
+    });
   } catch (err) {
     console.error("Checkout error:", err);
     return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
