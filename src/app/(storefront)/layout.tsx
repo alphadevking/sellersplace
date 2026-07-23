@@ -100,7 +100,7 @@ export default async function StorefrontLayout({
         {/* Top padding clears the fixed header (taller below lg where the mobile
             search row shows). The home hero cancels it with a matching -mt to
             bleed up behind the nav. */}
-        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-24 pt-32 md:pb-16 lg:pt-24">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-24 pt-40 md:pb-16 lg:pt-28">
           {children}
         </main>
 

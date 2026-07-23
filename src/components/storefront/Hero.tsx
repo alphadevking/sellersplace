@@ -93,7 +93,7 @@ export default function Hero({
   return (
     <section
       ref={sectionRef}
-      className="relative -mt-[7.25rem] mx-[calc(50%-50vw+0.75rem)] flex min-h-[92vh] w-[calc(100vw-1.5rem)] flex-col items-center justify-center overflow-hidden bg-surface text-center [--hero-r:24px] rounded-[calc(var(--hero-r)*0.5)] sm:[--hero-r:36px] lg:-mt-[5.25rem] lg:[--hero-r:52px]"
+      className="relative -mt-[9.25rem] mx-[calc(50%-50vw+0.75rem)] flex min-h-[92vh] w-[calc(100vw-1.5rem)] flex-col items-center justify-center overflow-hidden bg-surface text-center [--hero-r:24px] rounded-[calc(var(--hero-r)*0.5)] sm:[--hero-r:36px] lg:-mt-[6.25rem] lg:[--hero-r:52px]"
     >
       {videoSrc ? (
         <video
