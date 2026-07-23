@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { storeConfig } from "@/config/store";
 import { requireAdmin } from "@/lib/admin";
 import AdminNav from "@/components/admin/AdminNav";
+import BrandMark from "@/components/BrandMark";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata = { title: "Admin", robots: { index: false, follow: false } };
@@ -22,6 +23,7 @@ export default async function AdminLayout({
       >
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3.5">
           <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <BrandMark size={28} className="h-7 w-7" iconClassName="h-5 w-5" />
             {storeConfig.name}
             <span
               className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"

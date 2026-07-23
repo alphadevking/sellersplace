@@ -25,22 +25,39 @@ export default function OpengraphImage() {
           fontFamily: "sans-serif",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 96,
-            height: 96,
-            borderRadius: 48,
-            background: "rgba(255,255,255,0.18)",
-            fontSize: 56,
-            fontWeight: 700,
-            marginBottom: 40,
-          }}
-        >
-          {storeConfig.name.charAt(0).toUpperCase()}
-        </div>
+        {storeConfig.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={storeConfig.logoUrl}
+            alt=""
+            width={96}
+            height={96}
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 48,
+              objectFit: "cover",
+              marginBottom: 40,
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 96,
+              height: 96,
+              borderRadius: 48,
+              background: "rgba(255,255,255,0.18)",
+              fontSize: 56,
+              fontWeight: 700,
+              marginBottom: 40,
+            }}
+          >
+            {storeConfig.name.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div style={{ fontSize: 84, fontWeight: 700, letterSpacing: -2 }}>
           {storeConfig.name}
         </div>

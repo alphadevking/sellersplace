@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShoppingBag, Heart, Sparkle, User } from "lucide-react";
+import { ShoppingBag, Heart, User } from "lucide-react";
 import { storeConfig, storeKind, terms } from "@/config/store";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +10,7 @@ import CountBadge from "@/components/storefront/CountBadge";
 import Footer from "@/components/storefront/Footer";
 import SearchBar from "@/components/storefront/SearchBar";
 import NavLink from "@/components/storefront/NavLink";
-import SmartImage from "@/components/SmartImage";
+import BrandMark from "@/components/BrandMark";
 import ThemeToggle from "@/components/ThemeToggle";
 import { CartProvider } from "@/lib/cart-context";
 
@@ -48,17 +48,7 @@ export default async function StorefrontLayout({
                 href="/"
                 className="flex items-center gap-0.5s font-display text-mds font-medium tracking-[-0.01em]"
               >
-                {storeConfig.logoUrl ? (
-                  <SmartImage
-                    src={storeConfig.logoUrl}
-                    alt={`${storeConfig.name} logo`}
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 rounded-full object-cover"
-                  />
-                ) : (
-                  <Sparkle className="h-6 w-6 fill-current" style={{ color: "var(--brand)" }} />
-                )}
+                <BrandMark size={36} className="h-9 w-9" iconClassName="h-6 w-6" />
                 {storeConfig.name}
               </Link>
 

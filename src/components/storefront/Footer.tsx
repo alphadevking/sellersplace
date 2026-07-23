@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { storeConfig, terms } from "@/config/store";
+import BrandMark from "@/components/BrandMark";
 import { ShieldCheck, Truck, RotateCcw } from "lucide-react";
 
 const SHOP_LINKS = [
@@ -24,7 +25,8 @@ export default function Footer() {
     >
       <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-4">
         <div className="flex flex-col gap-3">
-          <span className="font-display text-2xl font-semibold tracking-[-0.02em]">
+          <span className="flex items-center gap-2.5 font-display text-2xl font-semibold tracking-[-0.02em]">
+            <BrandMark size={32} className="h-8 w-8" iconClassName="h-6 w-6" />
             {storeConfig.name}
           </span>
           <p className="max-w-[30ch] text-sm leading-relaxed text-muted">
