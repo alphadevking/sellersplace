@@ -89,6 +89,7 @@ const identityJsonLd = {
       creator: {
         "@type": "Organization",
         name: developer.name,
+        url: developer.url,
         email: developer.email,
       },
       potentialAction: {

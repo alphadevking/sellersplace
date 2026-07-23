@@ -1,0 +1,70 @@
+SellersPlace Source-Available License
+Copyright (c) 2026 Favour Orukpe (alphadevking), trading as Nexhub Labs
+(a product of NexSpace). All rights reserved.
+
+Contact: nexhublabs@gmail.com · https://nexhublabs.vercel.app
+
+This is NOT an open-source license. The source code of this repository is
+made publicly visible for transparency and evaluation only. All rights not
+expressly granted below are reserved by the copyright holder.
+
+1. PERMITTED WITHOUT A COMMERCIAL LICENSE
+   You may:
+   a. view, clone, and study the source code;
+   b. run the software locally for personal evaluation, learning, or
+      development purposes;
+   c. open issues and propose changes (see section 5).
+
+2. PROHIBITED WITHOUT A COMMERCIAL LICENSE
+   You may NOT, without a separate written license from Nexhub Labs:
+   a. deploy the software, or any modified version of it, for any live,
+      production, commercial, or public-facing use (including operating a
+      store, marketplace, or service for yourself or any third party);
+   b. sell, resell, license, sublicense, rent, or otherwise redistribute the
+      software or derivative works, whether as source code, a template, a
+      theme, a boilerplate, or a hosted service;
+   c. remove, hide, or alter the developer attribution ("Built by" /
+      "Powered by" credits) or this license notice.
+
+3. COMMERCIAL LICENSING
+   Production and commercial use is available under a per-deployment
+   commercial license from Nexhub Labs. See LICENSING.md in this repository,
+   or contact nexhublabs@gmail.com.
+
+4. TRADEMARKS
+   "SellersPlace", "Nexhub Labs", and "NexSpace" and any associated logos
+   may not be used to endorse, name, or promote derivative products or
+   services without prior written permission.
+
+5. CONTRIBUTIONS
+   By submitting a contribution (pull request, patch, or suggestion) to this
+   repository, you agree that your contribution is licensed to the copyright
+   holder without restriction and may be incorporated into the software and
+   commercially licensed as part of it, and you waive any claim to
+   compensation or ownership arising from its use.
+
+6. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+7. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES,
+   OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+   ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+   OTHER DEALINGS IN THE SOFTWARE.
+
+8. TERMINATION
+   Any use of the software outside the permissions of section 1 without a
+   commercial license automatically terminates the permissions granted here.
+
+9. SCOPE — ALL VERSIONS, INCLUDING PRIOR HISTORY
+   This license and the copyright it asserts apply to the software in its
+   entirety and to every version of it: all past, present, and future
+   revisions, commits, branches, tags, releases, forks, mirrors, and copies,
+   whether obtained before or after this notice was added to the repository.
+   The software has at all times been protected by copyright from the moment
+   of its creation; the earlier absence of this file was never a grant of
+   rights, and all rights not expressly granted have at all times been
+   reserved. Possession of a copy obtained from any source or at any time
+   confers no rights beyond those in section 1.

@@ -73,7 +73,12 @@ export default function Footer() {
           </span>
           <span className="flex items-center gap-4">
             <span>Prices in {storeConfig.currency}</span>
-            <a href={developerHref} className="transition-colors hover:text-foreground">
+            <a
+              href={developerHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
               Built by <span className="font-medium">{developer.name}</span>
             </a>
           </span>

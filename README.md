@@ -4,6 +4,20 @@ A customizable, installable e-commerce PWA. One codebase, deployed once per clie
 re-skinned via config — doubles as a normal website and an installable app (Android via
 Chrome's install prompt / "Add to Home Screen", iOS via Safari "Add to Home Screen").
 
+Built and licensed by [Nexhub Labs](https://nexhublabs.vercel.app) — putting small
+businesses online without big-website costs. **Live demo:**
+[sellersplace.vercel.app](https://sellersplace.vercel.app)
+
+## Licensing
+
+This repository is **source-available, not open source**. The code is public for
+transparency and evaluation; deploying it as a live store requires a commercial
+license per store.
+
+- [LICENSE](LICENSE) — the terms
+- [LICENSING.md](LICENSING.md) — how per-store licensing works
+- Get your business online: [nexhublabs@gmail.com](mailto:nexhublabs@gmail.com)
+
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack, TypeScript)
@@ -102,10 +116,15 @@ NEXT_PUBLIC_STORE_PRIMARY_COLOR="#DC2626"
 
 ## Re-skinning for a new client
 
-1. Edit `src/config/store.ts` (or just the env vars it reads) — store name, brand color, currency.
-2. Swap `public/icons/*` with the client's logo assets (192px, 512px, and a 512px maskable icon).
+1. Edit the env vars `src/config/store.ts` reads — store name, brand color, logo URL,
+   hero media, contact channels, vocabulary (`NEXT_PUBLIC_STORE_*`).
+2. Icons are generated automatically from `NEXT_PUBLIC_STORE_LOGO` (favicon,
+   apple-touch, PWA install icons, OG cards) — no image assets to prepare.
 3. Point `.env` at the client's own `DATABASE_URL` and Paystack keys.
 4. Deploy.
+
+The "Built by Nexhub Labs" attribution is part of the product and stays across
+re-skins (see [LICENSE](LICENSE) §2c); white-label is a licensed upgrade.
 
 ## Project structure
 

@@ -5,6 +5,7 @@ export function GET() {
   const body = [
     "/* TEAM */",
     `Developer: ${developer.name}`,
+    `Site: ${developer.url}`,
     `Contact: ${developer.email}`,
     `Mission: ${developer.tagline}`,
     "",

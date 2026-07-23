@@ -245,7 +245,12 @@ export default async function InvoicePage({
         </p>
         <p className="w-full text-center text-[11px] text-muted">
           Powered by{" "}
-          <a href={developerHref} className="font-medium hover:text-foreground">
+          <a
+            href={developerHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium hover:text-foreground"
+          >
             {developer.name}
           </a>
         </p>

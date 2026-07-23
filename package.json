@@ -2,6 +2,8 @@
   "name": "sellersplace",
   "version": "0.1.0",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Nexhub Labs <nexhublabs@gmail.com> (https://nexhublabs.vercel.app)",
   "scripts": {
     "dev": "next dev --port 3005",
     "build": "prisma generate && next build",
