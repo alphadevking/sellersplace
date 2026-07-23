@@ -3,11 +3,20 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  const { email, password, name } = await req.json();
+  const { email, password, name, agreed } = await req.json();
 
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
       { error: "Email and an 8+ character password are required" },
+      { status: 400 }
+    );
+  }
+
+  // Consent is enforced server-side, not just by the checkbox UI — accounts
+  // cannot exist without agreement to the Terms and Privacy Policy (NDPR).
+  if (agreed !== true) {
+    return NextResponse.json(
+      { error: "You must agree to the Terms of Service and Privacy Policy to create an account" },
       { status: 400 }
     );
   }

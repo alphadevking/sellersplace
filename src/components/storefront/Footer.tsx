@@ -68,8 +68,16 @@ export default function Footer() {
 
       <div className="border-t" style={{ borderColor: "var(--border)" }}>
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-6 gap-y-1.5 px-4 py-4 text-xs text-muted">
-          <span>
-            © {new Date().getFullYear()} {storeConfig.name}. All rights reserved.
+          <span className="flex items-center gap-4">
+            <span>
+              © {new Date().getFullYear()} {storeConfig.name}. All rights reserved.
+            </span>
+            <Link href="/terms" className="transition-colors hover:text-foreground">
+              Terms
+            </Link>
+            <Link href="/privacy" className="transition-colors hover:text-foreground">
+              Privacy
+            </Link>
           </span>
           <span className="flex items-center gap-4">
             <span>Prices in {storeConfig.currency}</span>

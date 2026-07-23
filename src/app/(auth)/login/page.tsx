@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import PasswordInput from "@/components/PasswordInput";
 
 // useSearchParams() needs a Suspense boundary for prerendering.
 export default function LoginPage() {
@@ -67,13 +68,7 @@ function LoginForm() {
         </label>
         <label className="field-label">
           Password
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="input-field"
-          />
+          <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" />
         </label>
 
         {error && (
@@ -83,6 +78,18 @@ function LoginForm() {
         <button type="submit" disabled={submitting} className="btn-primary justify-center">
           {submitting ? "Signing in…" : "Sign in"}
         </button>
+
+        <p className="text-center text-[11px] leading-relaxed text-muted">
+          By signing in you agree to our{" "}
+          <Link href="/terms" target="_blank" className="underline hover:text-foreground">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" target="_blank" className="underline hover:text-foreground">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </form>
 
       <p className="text-center text-sm text-muted">
