@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
 import { storeConfig } from "@/config/store";
+import CustomCursor from "@/components/CustomCursor";
 import RouteTransitionOverlay from "@/components/RouteTransitionOverlay";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import "./globals.css";
@@ -126,6 +127,7 @@ export default function RootLayout({
         />
         {children}
         <RouteTransitionOverlay />
+        <CustomCursor />
         <ServiceWorkerRegister />
       </body>
     </html>

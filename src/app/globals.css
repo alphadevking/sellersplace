@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -15,7 +15,7 @@
   /* Derived shades so any brand color still gets sensible hover/press states. */
   --brand-hover: color-mix(in srgb, var(--brand) 88%, black);
   --brand-soft: color-mix(in srgb, var(--brand) 10%, white);
-  /* Semantic accent aliases — surfaces reference these so the brand can be
+  /* Semantic accent aliases â€” surfaces reference these so the brand can be
      re-tuned in one place without hunting raw var(--brand) fills. */
   --accent: var(--brand);
   --accent-soft: var(--brand-soft);
@@ -24,14 +24,14 @@
   --ring: color-mix(in srgb, var(--brand) 45%, transparent);
   --shadow-sm: 0 1px 2px rgba(20, 20, 15, 0.04);
   --shadow-md: 0 6px 24px -12px rgba(20, 20, 15, 0.18);
-  /* Danger stays a fixed red regardless of the brand hue — errors must always
+  /* Danger stays a fixed red regardless of the brand hue â€” errors must always
      read as errors even when a deployment re-themes the accent to, say, blue. */
   --danger: #c81e1e;
   --danger-soft: #fdecec;
   color-scheme: light;
 }
 
-/* Dark theme — toggled by data-theme="dark" on <html> (see ThemeToggle).
+/* Dark theme â€” toggled by data-theme="dark" on <html> (see ThemeToggle).
    Warm dark neutrals from the SellersPlace design system; the brand hue is
    unchanged but its derivations flip toward the dark canvas. */
 [data-theme="dark"] {
@@ -74,7 +74,7 @@ body {
   color: var(--foreground);
 }
 
-/* Global keyboard focus ring — one accessible affordance for every interactive
+/* Global keyboard focus ring â€” one accessible affordance for every interactive
    element. :where() keeps specificity at 0 so components can still override,
    and :focus-visible means mouse users never see it. Inputs opt out here since
    .input-field paints its own focus glow below. */
@@ -88,7 +88,7 @@ body {
    and balanced wrapping; the body stays on Geist. Applied explicitly on
    storefront surfaces so admin typography is left untouched. The `.font-display`
    utility itself is generated from the --font-display theme token above. */
-/* Display headings — a grotesque display face with tight tracking. */
+/* Display headings â€” a grotesque display face with tight tracking. */
 @utility display-hero {
   font-family: var(--font-display), var(--font-geist-sans), sans-serif;
   @apply font-semibold;
@@ -106,7 +106,7 @@ body {
   @apply text-[11px] font-medium uppercase tracking-[0.18em] text-muted;
 }
 
-/* Hairline-bordered pill — the floating-nav and chip language from the
+/* Hairline-bordered pill â€” the floating-nav and chip language from the
    reference. Translucent so the canvas shows through. */
 @utility chip {
   @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium;
@@ -167,7 +167,7 @@ body {
   .card-surface {
     @apply rounded-2xl bg-surface;
   }
-  /* Tappable surface (product/category tiles) — a restrained lift on hover
+  /* Tappable surface (product/category tiles) â€” a restrained lift on hover
      instead of shouting with brand fills. */
   .card-interactive {
     @apply rounded-2xl bg-surface transition-[transform,box-shadow] duration-200;
@@ -180,7 +180,7 @@ body {
   .field-label {
     @apply flex flex-col gap-1.5 text-xs font-medium text-muted;
   }
-  /* Themed error banner — works in both light and dark, unlike the hardcoded
+  /* Themed error banner â€” works in both light and dark, unlike the hardcoded
      bg-red-50/text-red-700 it replaces. */
   .alert-error {
     @apply rounded-xl border px-3.5 py-3 text-sm;
@@ -190,7 +190,7 @@ body {
   }
 }
 
-/* Respect users who ask for less motion — neutralises every hover lift, scale,
+/* Respect users who ask for less motion â€” neutralises every hover lift, scale,
    and transition the design uses. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -210,7 +210,7 @@ body {
   }
 }
 
-/* Indeterminate top progress bar for route transitions — a non-blocking
+/* Indeterminate top progress bar for route transitions â€” a non-blocking
    navigation cue that never dims already-visible content. */
 @keyframes route-bar-slide {
   0% {

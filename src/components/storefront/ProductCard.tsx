@@ -52,6 +52,7 @@ export default function ProductCard({
   return (
     <Link
       href={productHref(product)}
+      data-cursor="View"
       className="card-interactive group flex flex-col p-2.5"
     >
       <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-background text-3xl">
