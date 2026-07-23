@@ -2,14 +2,9 @@ import Link from "next/link";
 import { Headset, ThumbsDown, ThumbsUp } from "lucide-react";
 import { requireAdmin } from "@/lib/admin";
 import { getAdminInbox } from "@/lib/chat";
+import { TICKET_STYLE } from "@/components/admin/ticketStyles";
 
 export const metadata = { title: "Support chat" };
-
-const TICKET_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
-  OPEN: { bg: "#fef3c7", fg: "#92400e", label: "Open" },
-  IN_PROGRESS: { bg: "#dbeafe", fg: "#1e40af", label: "In progress" },
-  RESOLVED: { bg: "#dcfce7", fg: "#166534", label: "Resolved" },
-};
 
 export default async function AdminChatPage() {
   await requireAdmin("/admin/chat");

@@ -16,6 +16,7 @@ function serialize(m: ChatMessageRow) {
     id: m.id,
     sender: m.sender,
     body: m.body,
+    ticketId: m.ticketId,
     createdAt: m.createdAt.toISOString(),
   };
 }

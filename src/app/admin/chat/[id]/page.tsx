@@ -38,11 +38,15 @@ export default async function AdminChatThreadPage({
         id: t.id,
         number: t.number,
         status: t.status,
+        rating: t.rating,
+        openedAt: t.openedAt.toISOString(),
+        resolvedAt: t.resolvedAt?.toISOString() ?? null,
       }))}
       initialMessages={conversation.messages.map((m) => ({
         id: m.id,
         sender: m.sender,
         body: m.body,
+        ticketId: m.ticketId,
         createdAt: m.createdAt.toISOString(),
       }))}
     />

@@ -2,17 +2,29 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Send } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Send, ThumbsDown, ThumbsUp, Ticket as TicketIcon } from "lucide-react";
 import { adminReply, resolveTicket } from "@/app/actions/chat";
+import { TICKET_STYLE } from "@/components/admin/ticketStyles";
 
 type Message = {
   id: string;
   sender: "CUSTOMER" | "STORE" | "BOT";
   body: string;
+  ticketId: string | null;
   createdAt: string;
 };
 
-type Ticket = { id: string; number: string; status: "OPEN" | "IN_PROGRESS" | "RESOLVED" };
+type Ticket = {
+  id: string;
+  number: string;
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
+  rating: number | null;
+  openedAt: string;
+  resolvedAt: string | null;
+};
+
+const shortDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-NG", { day: "numeric", month: "short" });
 
 const POLL_MS = 5_000;
 
@@ -33,6 +45,8 @@ export default function AdminChatThread({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ticketList, setTicketList] = useState(tickets);
+  const [showTickets, setShowTickets] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<string | undefined>(
     initialMessages.length ? initialMessages[initialMessages.length - 1].createdAt : undefined
@@ -88,6 +102,22 @@ export default function AdminChatThread({
     setSending(false);
   }
 
+  /** Toggle a ticket filter and jump to its first message in the thread. */
+  function selectTicket(id: string) {
+    const next = selectedTicketId === id ? null : id;
+    setSelectedTicketId(next);
+    if (next) {
+      const first = messages.find((m) => m.ticketId === next);
+      if (first) {
+        requestAnimationFrame(() => {
+          listRef.current
+            ?.querySelector(`[data-mid="${first.id}"]`)
+            ?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+      }
+    }
+  }
+
   async function handleResolve() {
     if (!openTicket || sending) return;
     setSending(true);
@@ -120,17 +150,75 @@ export default function AdminChatThread({
             </span>
           </div>
         </div>
-        {openTicket && (
-          <button
-            type="button"
-            onClick={handleResolve}
-            disabled={sending}
-            className="btn-outline px-3 py-2 text-xs"
-          >
-            <Check className="h-3.5 w-3.5" /> Resolve {openTicket.number}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {ticketList.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowTickets((v) => !v)}
+              className="btn-ghost px-3 py-2 text-xs"
+              aria-expanded={showTickets}
+            >
+              <TicketIcon className="h-3.5 w-3.5" /> Tickets ({ticketList.length})
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${showTickets ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
+          {openTicket && (
+            <button
+              type="button"
+              onClick={handleResolve}
+              disabled={sending}
+              className="btn-outline px-3 py-2 text-xs"
+            >
+              <Check className="h-3.5 w-3.5" /> Resolve {openTicket.number}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Ticket history — tap one to spotlight its slice of the thread */}
+      {showTickets && (
+        <div
+          className="card flex max-h-44 flex-col divide-y overflow-y-auto [&>*]:border-[var(--border)]"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {ticketList.map((t) => {
+            const s = TICKET_STYLE[t.status];
+            const sel = t.id === selectedTicketId;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => selectTicket(t.id)}
+                aria-pressed={sel}
+                className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-left text-xs transition-colors hover:bg-surface"
+                style={sel ? { background: "var(--brand-soft)" } : undefined}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  {t.number}
+                  {t.rating != null &&
+                    (t.rating >= 3 ? (
+                      <ThumbsUp className="h-3.5 w-3.5" style={{ color: "#16a34a" }} aria-label="Rated positive" />
+                    ) : (
+                      <ThumbsDown className="h-3.5 w-3.5" style={{ color: "#dc2626" }} aria-label="Rated negative" />
+                    ))}
+                </span>
+                <span className="flex shrink-0 items-center gap-2 text-muted">
+                  {shortDate(t.openedAt)}
+                  {t.resolvedAt ? ` → ${shortDate(t.resolvedAt)}` : ""}
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                    style={{ background: s.bg, color: s.fg }}
+                  >
+                    {s.label}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div
         ref={listRef}
@@ -138,8 +226,15 @@ export default function AdminChatThread({
       >
         {messages.map((m) => {
           const store = m.sender !== "CUSTOMER";
+          const dimmed = selectedTicketId != null && m.ticketId !== selectedTicketId;
           return (
-            <div key={m.id} className={`flex ${store ? "justify-end" : "justify-start"}`}>
+            <div
+              key={m.id}
+              data-mid={m.id}
+              className={`flex transition-opacity ${store ? "justify-end" : "justify-start"} ${
+                dimmed ? "opacity-30" : ""
+              }`}
+            >
               <div
                 className={`max-w-[75%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
                   store ? "rounded-br-md text-brand-foreground" : "rounded-bl-md bg-surface"
