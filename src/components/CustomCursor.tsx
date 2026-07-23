@@ -85,8 +85,10 @@ export default function CustomCursor() {
   const labelRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    // Fine pointer only — touch devices keep their native (no) cursor.
-    if (!window.matchMedia("(pointer: fine)").matches) return;
+    // Mouse-driven devices only — phones/tablets keep their native (no)
+    // cursor. `hover: hover` filters out touch-first devices that misreport a
+    // fine pointer.
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     const dot = dotRef.current;
     const arrow = arrowRef.current;
     const hand = handRef.current;
@@ -114,6 +116,9 @@ export default function CustomCursor() {
     let state = "default";
     let pressed = false;
     let lastTarget: Element | null = null;
+    // Hybrid (touch-screen laptop) support: hide while the user is touching;
+    // real mouse movement brings the cursor back.
+    let lastTouch = 0;
 
     const applyStyle = () => {
       const size = RING_SIZE[state] ?? RING_SIZE.default;
@@ -155,7 +160,21 @@ export default function CustomCursor() {
       return ["link", ""];
     };
 
+    const onTouch = () => {
+      lastTouch = Date.now();
+      if (inWindow) {
+        inWindow = false;
+        applyStyle();
+      }
+    };
+
     const onMove = (e: MouseEvent) => {
+      // Ignore the synthetic mousemoves browsers fire right after a touch.
+      if (Date.now() - lastTouch < 500) return;
+      if (!inWindow) {
+        inWindow = true;
+        applyStyle();
+      }
       const x = e.clientX;
       const y = e.clientY;
       if (!seen) {
@@ -207,6 +226,7 @@ export default function CustomCursor() {
     };
 
     window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("touchstart", onTouch, { passive: true });
     window.addEventListener("mousedown", onDown);
     window.addEventListener("mouseup", onUp);
     document.documentElement.addEventListener("mouseleave", onLeave);
@@ -214,6 +234,7 @@ export default function CustomCursor() {
 
     return () => {
       window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchstart", onTouch);
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
       document.documentElement.removeEventListener("mouseleave", onLeave);
