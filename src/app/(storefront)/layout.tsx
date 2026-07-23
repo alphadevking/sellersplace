@@ -46,18 +46,18 @@ export default async function StorefrontLayout({
             >
               <Link
                 href="/"
-                className="flex items-center gap-2 font-display text-lg font-medium tracking-[-0.01em]"
+                className="flex items-center gap-0.5s font-display text-mds font-medium tracking-[-0.01em]"
               >
                 {storeConfig.logoUrl ? (
                   <SmartImage
                     src={storeConfig.logoUrl}
                     alt={`${storeConfig.name} logo`}
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 rounded-full object-cover"
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 rounded-full object-cover"
                   />
                 ) : (
-                  <Sparkle className="h-4 w-4 fill-current" style={{ color: "var(--brand)" }} />
+                  <Sparkle className="h-6 w-6 fill-current" style={{ color: "var(--brand)" }} />
                 )}
                 {storeConfig.name}
               </Link>
