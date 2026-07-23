@@ -739,7 +739,7 @@ async function main() {
       name: "Store Admin",
       phone: "+2348000000000",
       role: "ADMIN",
-      passwordHash: await bcrypt.hash(adminPassword, 10),
+      passwordHash: await bcrypt.hash(adminPassword, 12),
     },
   });
 
@@ -752,7 +752,7 @@ async function main() {
       email: "customer@example.com",
       name: "Ada Demo",
       phone: "+2348111111111",
-      passwordHash: await bcrypt.hash("customer123", 10),
+      passwordHash: await bcrypt.hash("customer123", 12),
     },
   });
 

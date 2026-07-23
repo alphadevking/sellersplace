@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import PasswordInput from "@/components/PasswordInput";
 
@@ -82,6 +83,13 @@ export default function ChangePasswordForm() {
         <button type="submit" disabled={submitting} className="btn-outline justify-center">
           {submitting ? "Updating…" : "Update password"}
         </button>
+
+        <Link
+          href="/forgot-password"
+          className="text-center text-xs text-muted hover:text-foreground"
+        >
+          Forgot your current password? Reset it by email.
+        </Link>
       </form>
     </details>
   );

@@ -57,7 +57,22 @@ Also review the delivery fee (`deliveryFeeFlat` in
 | **[Cloudinary](https://cloudinary.com)** (free) | Product image uploads from the admin dashboard (without it, admins paste image URLs) | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
 | **Web Push (VAPID)** (free, no account) | Order-status + support-chat push notifications | Generate: `pnpm dlx web-push generate-vapid-keys` → `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` |
 | **Support LLM** (optional, any one) | AI answers in support chat before agent escalation (FAQ bot works without it) | One of `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY` / `MISTRAL_API_KEY`; optional `SUPPORT_LLM_PROVIDER`, `SUPPORT_LLM_MODEL` |
-| **[Resend](https://resend.com)** (free tier) — *planned* | Email verification at signup, password reset, order-confirmation emails, daily sales digest | `RESEND_API_KEY` (feature in progress — key can be collected now) |
+| **[Resend](https://resend.com)** (free tier — 3,000 emails/mo) | **Email verification at signup** (stops account takeover via a known email) and **password reset**. Without it, signup skips verification and reset is unavailable. | `RESEND_API_KEY`; `EMAIL_FROM` once the store domain is verified in Resend |
+
+**Resend setup:** create an account, add an API key → `RESEND_API_KEY`.
+
+Verification is **enforced only when BOTH `RESEND_API_KEY` and `EMAIL_FROM`
+are set** — this is a safety gate. Resend's sandbox sender
+(`onboarding@resend.dev`) only delivers to your own Resend-account email, so a
+bare key must never gate real customers (they'd all be locked out of signup).
+
+- **Testing:** set `RESEND_API_KEY` **and** `EMAIL_FROM="Store <onboarding@resend.dev>"`,
+  then test signup/reset **with your own Resend-account email** (no other
+  address receives sandbox mail).
+- **Production:** verify the store's domain in Resend, set
+  `EMAIL_FROM="Store <hello@storedomain.com>"`. **Do not put the key in
+  production until the domain is verified** — without `EMAIL_FROM`, verification
+  stays off and signup works for everyone (just unverified).
 
 ---
 

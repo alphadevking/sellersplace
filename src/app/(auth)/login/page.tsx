@@ -71,6 +71,13 @@ function LoginForm() {
           <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" />
         </label>
 
+        <Link
+          href="/forgot-password"
+          className="-mt-1 self-end text-xs text-muted hover:text-foreground"
+        >
+          Forgot password?
+        </Link>
+
         {error && (
           <p className="alert-error" role="alert">{error}</p>
         )}

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { isEmailConfigured } from "@/lib/email";
+import { verifyCode } from "@/lib/verification";
 
 export async function POST(req: NextRequest) {
-  const { email, password, name, agreed } = await req.json();
+  const body = await req.json();
+  const { password, name, agreed, code } = body;
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
@@ -21,6 +25,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Email ownership: when email is configured, a valid one-time code is
+  // required — this is what stops someone claiming a guest account (and its
+  // order history) using only a known email address. Deployments without
+  // email infra skip the gate entirely, preserving today's behaviour.
+  if (isEmailConfigured()) {
+    if (!(await verifyCode(email, "SIGNUP", String(code ?? "")))) {
+      return NextResponse.json(
+        { error: "That verification code is invalid or has expired. Request a new one." },
+        { status: 400 }
+      );
+    }
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
 
   if (existing && existing.passwordHash) {
@@ -30,7 +47,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
 
   if (existing) {
     // This email previously checked out as a guest — upgrade that account
