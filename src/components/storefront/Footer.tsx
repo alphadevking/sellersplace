@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { storeConfig, terms } from "@/config/store";
+import { developer, developerHref, storeConfig, terms } from "@/config/store";
 import BrandMark from "@/components/BrandMark";
 import { ShieldCheck, Truck, RotateCcw } from "lucide-react";
 
@@ -67,11 +67,16 @@ export default function Footer() {
       </div>
 
       <div className="border-t" style={{ borderColor: "var(--border)" }}>
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 text-xs text-muted">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-6 gap-y-1.5 px-4 py-4 text-xs text-muted">
           <span>
             © {new Date().getFullYear()} {storeConfig.name}. All rights reserved.
           </span>
-          <span>Prices in {storeConfig.currency}</span>
+          <span className="flex items-center gap-4">
+            <span>Prices in {storeConfig.currency}</span>
+            <a href={developerHref} className="transition-colors hover:text-foreground">
+              Built by <span className="font-medium">{developer.name}</span>
+            </a>
+          </span>
         </div>
       </div>
     </footer>

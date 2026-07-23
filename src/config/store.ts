@@ -71,6 +71,21 @@ function parseEtaDays(raw: string | undefined, fallback: [number, number]): [num
   return min >= 1 && max >= min ? [min, max] : fallback;
 }
 
+/**
+ * Developer attribution — the "built by" credit that persists across every
+ * re-skinned deployment (the government-site pattern). Env-overridable only
+ * for explicit white-label arrangements; the defaults are the product's.
+ */
+export const developer = {
+  name: process.env.NEXT_PUBLIC_DEVELOPER_NAME || "Nexhub Labs",
+  email: process.env.NEXT_PUBLIC_DEVELOPER_EMAIL || "nexhublabs@gmail.com",
+  /** One-line mission, used in humans.txt/meta — not rendered in the UI. */
+  tagline: "Putting small businesses online without big-website costs",
+} as const;
+
+/** Contact link for the developer credit. */
+export const developerHref = `mailto:${developer.email}`;
+
 /** wa.me deep link with a prefilled message; empty string when WhatsApp isn't configured. */
 export function whatsappLink(message: string): string {
   if (!storeConfig.whatsappNumber) return "";

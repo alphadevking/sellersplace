@@ -4,7 +4,7 @@ import { CheckCircle2, Phone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
 import { balanceDue } from "@/lib/payments";
-import { storeConfig, whatsappLink } from "@/config/store";
+import { developer, developerHref, storeConfig, whatsappLink } from "@/config/store";
 import BrandMark from "@/components/BrandMark";
 import PrintButton from "@/components/PrintButton";
 import PayBalanceButton from "@/components/storefront/PayBalanceButton";
@@ -242,6 +242,12 @@ export default async function InvoicePage({
         <PrintButton />
         <p className="hidden w-full text-xs text-muted print:block">
           Issued by {storeConfig.name} · {storeConfig.siteUrl}
+        </p>
+        <p className="w-full text-center text-[11px] text-muted">
+          Powered by{" "}
+          <a href={developerHref} className="font-medium hover:text-foreground">
+            {developer.name}
+          </a>
         </p>
       </footer>
     </div>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
-import { storeConfig } from "@/config/store";
+import { developer, storeConfig } from "@/config/store";
 import CustomCursor from "@/components/CustomCursor";
 import RouteTransitionOverlay from "@/components/RouteTransitionOverlay";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
@@ -33,6 +33,9 @@ export const metadata: Metadata = {
   },
   description: storeConfig.description,
   applicationName: storeConfig.name,
+  // Developer attribution — persists across re-skinned deployments.
+  authors: [{ name: developer.name }],
+  generator: `SellersPlace by ${developer.name}`,
   openGraph: {
     type: "website",
     siteName: storeConfig.name,
@@ -83,6 +86,11 @@ const identityJsonLd = {
       name: storeConfig.name,
       url: storeConfig.siteUrl,
       publisher: { "@id": `${storeConfig.siteUrl}/#organization` },
+      creator: {
+        "@type": "Organization",
+        name: developer.name,
+        email: developer.email,
+      },
       potentialAction: {
         "@type": "SearchAction",
         target: {
