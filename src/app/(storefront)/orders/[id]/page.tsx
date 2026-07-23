@@ -6,6 +6,8 @@ import { Check, ExternalLink, Truck } from "lucide-react";
 import PayBalanceButton from "@/components/storefront/PayBalanceButton";
 import { confirmOrderReceived } from "@/app/actions/orders";
 
+export const metadata = { title: "Order details", robots: { index: false, follow: false } };
+
 const TIMELINE_STEPS = ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 
 const STATUS_LABEL: Record<string, string> = {

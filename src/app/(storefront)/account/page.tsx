@@ -11,6 +11,8 @@ import { OrderStatusBadge } from "@/components/StatusBadge";
 import SignOutButton from "@/components/storefront/SignOutButton";
 import ReorderButton from "@/components/storefront/ReorderButton";
 
+export const metadata = { title: "My account", robots: { index: false, follow: false } };
+
 const ACTIVE_STATUSES = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED"] as const;
 
 function initials(name: string | null, email: string) {

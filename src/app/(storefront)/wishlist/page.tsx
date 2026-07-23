@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { getWishlistItems } from "@/lib/wishlist";
 import ProductCard from "@/components/storefront/ProductCard";
 
-export const metadata = { title: "Wishlist" };
+export const metadata = { title: "Wishlist", robots: { index: false, follow: false } };
 
 export default async function WishlistPage() {
   const session = await auth();

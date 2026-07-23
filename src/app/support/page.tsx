@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import ChatConversation from "@/components/storefront/ChatConversation";
 
-export const metadata = { title: "Support" };
+export const metadata = { title: "Support", robots: { index: false, follow: false } };
 
 /**
  * Full-screen support chat. The layout supplies the header and viewport-fit

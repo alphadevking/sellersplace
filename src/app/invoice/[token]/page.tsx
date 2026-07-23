@@ -5,7 +5,7 @@ import { balanceDue } from "@/lib/payments";
 import { storeConfig } from "@/config/store";
 import PayBalanceButton from "@/components/storefront/PayBalanceButton";
 
-export const metadata = { title: "Invoice" };
+export const metadata = { title: "Invoice", robots: { index: false, follow: false } };
 
 /**
  * Tokenized public invoice page — reachable only via the unguessable link the

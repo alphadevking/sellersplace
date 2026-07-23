@@ -10,6 +10,7 @@ import CountBadge from "@/components/storefront/CountBadge";
 import Footer from "@/components/storefront/Footer";
 import SearchBar from "@/components/storefront/SearchBar";
 import NavLink from "@/components/storefront/NavLink";
+import SmartImage from "@/components/SmartImage";
 import ThemeToggle from "@/components/ThemeToggle";
 import { CartProvider } from "@/lib/cart-context";
 
@@ -47,7 +48,17 @@ export default async function StorefrontLayout({
                 href="/"
                 className="flex items-center gap-2 font-display text-lg font-medium tracking-[-0.01em]"
               >
-                <Sparkle className="h-4 w-4 fill-current" style={{ color: "var(--brand)" }} />
+                {storeConfig.logoUrl ? (
+                  <SmartImage
+                    src={storeConfig.logoUrl}
+                    alt={`${storeConfig.name} logo`}
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <Sparkle className="h-4 w-4 fill-current" style={{ color: "var(--brand)" }} />
+                )}
                 {storeConfig.name}
               </Link>
 

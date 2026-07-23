@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { storeConfig } from "@/config/store";
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-4 py-12">

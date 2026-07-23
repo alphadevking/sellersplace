@@ -62,8 +62,75 @@ export default async function ProductDetail({
   const isChatOnly = product.purchaseMode === "CONTACT_SELLER" || isQuote;
   const catalogHref = isService ? "/services" : "/products";
 
+  // Product/Service + BreadcrumbList structured data — rich results (price,
+  // rating, availability, image indexing) for search engines.
+  const pageUrl = `${storeConfig.siteUrl}${catalogHref}/${product.slug}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": isService ? "Service" : "Product",
+        "@id": `${pageUrl}#offering`,
+        name: product.name,
+        ...(product.description ? { description: product.description } : {}),
+        ...(product.images?.length ? { image: product.images } : {}),
+        ...(!isService && product.sku ? { sku: product.sku } : {}),
+        ...(product.brand ? { brand: { "@type": "Brand", name: product.brand } } : {}),
+        ...(product.ratingCount > 0
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: Number(product.ratingAvg ?? 0).toFixed(1),
+                reviewCount: product.ratingCount,
+              },
+            }
+          : {}),
+        ...(!isQuote
+          ? {
+              offers: {
+                "@type": "Offer",
+                url: pageUrl,
+                price: price.toFixed(2),
+                priceCurrency: storeConfig.currency,
+                availability:
+                  isService || product.stock > 0
+                    ? "https://schema.org/InStock"
+                    : "https://schema.org/OutOfStock",
+              },
+            }
+          : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: storeConfig.siteUrl },
+          ...(product.category
+            ? [
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: product.category.name,
+                  item: `${storeConfig.siteUrl}${catalogHref}?category=${product.category.slug}`,
+                },
+              ]
+            : []),
+          {
+            "@type": "ListItem",
+            position: product.category ? 3 : 2,
+            name: product.name,
+            item: pageUrl,
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
     {/* Breadcrumbs — the one place category shows up; the line under the title
         carries brand only, so the two rows don't repeat the same word. */}
     <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted">

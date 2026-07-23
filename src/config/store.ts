@@ -9,6 +9,18 @@ export const storeConfig = {
   name: process.env.NEXT_PUBLIC_STORE_NAME || "SellersPlace",
   shortName: process.env.NEXT_PUBLIC_STORE_NAME?.slice(0, 12) || "SellersPlace",
   description: "Shop the latest products, delivered to your door.",
+  /**
+   * Canonical public origin — drives metadataBase, canonical URLs, the
+   * sitemap, robots, and JSON-LD. Set in production or SEO URLs will point at
+   * localhost.
+   */
+  siteUrl: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3005").replace(/\/$/, ""),
+  /**
+   * Optional logo image URL. When set it replaces the wordmark icon in the
+   * header and feeds Organization JSON-LD; otherwise the generated brand
+   * icon (app/icon.tsx) carries the identity.
+   */
+  logoUrl: process.env.NEXT_PUBLIC_STORE_LOGO || "",
   primaryColor: process.env.NEXT_PUBLIC_STORE_PRIMARY_COLOR || "#DC2626",
   backgroundColor: "#FFFFFF",
   currency: "NGN",

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
 // Query-driven search lives in lib/recommendations.ts (staged pipeline with
@@ -10,7 +11,9 @@ export async function getAllProducts() {
   });
 }
 
-export async function getProductBySlug(slug: string) {
+// cache(): generateMetadata and the page component both call this during one
+// request — dedupe so the product is fetched once per render.
+export const getProductBySlug = cache(async (slug: string) => {
   return prisma.product.findUnique({
     where: { slug },
     include: {
@@ -23,7 +26,7 @@ export async function getProductBySlug(slug: string) {
       },
     },
   });
-}
+});
 
 export async function getProductsByCategorySlug(categorySlug: string) {
   return prisma.product.findMany({

@@ -25,16 +25,73 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(storeConfig.siteUrl),
   title: {
-    default: storeConfig.name,
+    default: `${storeConfig.name} — ${storeConfig.description}`,
     template: `%s | ${storeConfig.name}`,
   },
   description: storeConfig.description,
+  applicationName: storeConfig.name,
+  openGraph: {
+    type: "website",
+    siteName: storeConfig.name,
+    title: storeConfig.name,
+    description: storeConfig.description,
+    url: "/",
+    locale: "en_NG",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: storeConfig.name,
+    description: storeConfig.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: { canonical: "/" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: storeConfig.name,
   },
+};
+
+// Organization + WebSite structured data — site-wide identity for search
+// engines (logo, name, sitelinks search box via the catalog search).
+const identityJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${storeConfig.siteUrl}/#organization`,
+      name: storeConfig.name,
+      url: storeConfig.siteUrl,
+      logo: storeConfig.logoUrl || `${storeConfig.siteUrl}/icons/icon-512.png`,
+      ...(storeConfig.phone ? { telephone: storeConfig.phone } : {}),
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${storeConfig.siteUrl}/#website`,
+      name: storeConfig.name,
+      url: storeConfig.siteUrl,
+      publisher: { "@id": `${storeConfig.siteUrl}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${storeConfig.siteUrl}/products?q={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
 };
 
 export const viewport: Viewport = {
@@ -62,6 +119,10 @@ export default function RootLayout({
             __html:
               'try{var t=localStorage.getItem("sellersplace:theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}',
           }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(identityJsonLd) }}
         />
         {children}
         <RouteTransitionOverlay />
