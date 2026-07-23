@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Link2 } from "lucide-react";
 
 /** Official brand marks (simple-icons paths, CC0) — lucide dropped these. */
@@ -34,17 +34,30 @@ function FacebookIcon() {
 }
 
 /**
- * "Share this product" row (Jumia-style) with real brand marks. WhatsApp tries
- * the native share sheet first on mobile; copy-link shows a "Copied!" overlay.
+ * "Share this product" row (Jumia-style) with real brand marks. Each network is
+ * a real anchor (target=_blank) so Safari — which blocks `window.open()` called
+ * after an await, or with a features string — navigates them natively like any
+ * link. WhatsApp additionally offers the native share sheet when available.
+ * Copy-link shows a "Copied!" overlay.
  */
 export default function ShareButtons({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
+  // Resolved on the client after mount; empty during SSR so hrefs are stable.
+  const [href, setHref] = useState("");
 
-  const url = () => window.location.href;
+  useEffect(() => {
+    setHref(window.location.href);
+  }, []);
+
+  const enc = encodeURIComponent;
+  const waHref = `https://wa.me/?text=${enc(`${title} — ${href}`)}`;
+  const xHref = `https://twitter.com/intent/tweet?text=${enc(title)}&url=${enc(href)}`;
+  const tgHref = `https://t.me/share/url?url=${enc(href)}&text=${enc(title)}`;
+  const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${enc(href)}`;
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(url());
+      await navigator.clipboard.writeText(href || window.location.href);
     } catch {
       // Clipboard blocked — still flash the confirmation; the intents work regardless.
     }
@@ -52,23 +65,20 @@ export default function ShareButtons({ title }: { title: string }) {
     setTimeout(() => setCopied(false), 1600);
   }
 
-  function open(href: string) {
-    window.open(href, "_blank", "noopener,noreferrer");
-  }
-
-  async function shareWhatsApp() {
+  // WhatsApp: prefer the OS share sheet when present, but the anchor's own
+  // href is the fallback — so nothing depends on a post-await window.open.
+  function onWhatsApp(e: React.MouseEvent<HTMLAnchorElement>) {
     if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title, url: url() });
-        return;
-      } catch {
-        // User dismissed the sheet or it's unavailable — fall through to wa.me.
-      }
+      e.preventDefault();
+      navigator.share({ title, url: href || window.location.href }).catch(() => {
+        // Sheet dismissed/failed — same-tab nav is always allowed on Safari.
+        window.location.href = waHref;
+      });
     }
-    open(`https://wa.me/?text=${encodeURIComponent(`${title} — ${url()}`)}`);
+    // Otherwise let the anchor navigate to wa.me normally.
   }
 
-  const btn =
+  const link =
     "flex h-9 w-9 items-center justify-center rounded-full border text-white transition-transform hover:scale-105 active:scale-95";
 
   return (
@@ -77,52 +87,47 @@ export default function ShareButtons({ title }: { title: string }) {
         Share this product
       </span>
       <div className="relative flex items-center gap-2">
-        <button
-          type="button"
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
           aria-label="Share on WhatsApp"
-          onClick={shareWhatsApp}
-          className={btn}
+          onClick={onWhatsApp}
+          className={link}
           style={{ background: "#25D366", borderColor: "#25D366" }}
         >
           <WhatsAppIcon />
-        </button>
-        <button
-          type="button"
+        </a>
+        <a
+          href={xHref}
+          target="_blank"
+          rel="noopener noreferrer"
           aria-label="Share on X"
-          onClick={() =>
-            open(
-              `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url())}`
-            )
-          }
-          className={`${btn} !text-[color:var(--background)]`}
+          className={`${link} !text-[color:var(--background)]`}
           style={{ background: "var(--foreground)", borderColor: "var(--foreground)" }}
         >
           <XIcon />
-        </button>
-        <button
-          type="button"
+        </a>
+        <a
+          href={tgHref}
+          target="_blank"
+          rel="noopener noreferrer"
           aria-label="Share on Telegram"
-          onClick={() =>
-            open(
-              `https://t.me/share/url?url=${encodeURIComponent(url())}&text=${encodeURIComponent(title)}`
-            )
-          }
-          className={btn}
+          className={link}
           style={{ background: "#26A5E4", borderColor: "#26A5E4" }}
         >
           <TelegramIcon />
-        </button>
-        <button
-          type="button"
+        </a>
+        <a
+          href={fbHref}
+          target="_blank"
+          rel="noopener noreferrer"
           aria-label="Share on Facebook"
-          onClick={() =>
-            open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url())}`)
-          }
-          className={btn}
+          className={link}
           style={{ background: "#1877F2", borderColor: "#1877F2" }}
         >
           <FacebookIcon />
-        </button>
+        </a>
         <button
           type="button"
           aria-label="Copy link"
