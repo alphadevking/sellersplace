@@ -36,6 +36,9 @@ export const metadata: Metadata = {
   // Developer attribution — persists across re-skinned deployments.
   authors: [{ name: developer.name }],
   generator: `SellersPlace by ${developer.name}`,
+  // Default share image via a cached route handler (NOT the opengraph-image
+  // file convention, which would override every page's own images, including
+  // per-product cards). Pages with their own openGraph.images override this.
   openGraph: {
     type: "website",
     siteName: storeConfig.name,
@@ -43,11 +46,20 @@ export const metadata: Metadata = {
     description: storeConfig.description,
     url: "/",
     locale: "en_NG",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: `${storeConfig.name} — ${storeConfig.description}`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: storeConfig.name,
     description: storeConfig.description,
+    images: ["/api/og"],
   },
   robots: {
     index: true,
